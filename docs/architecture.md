@@ -9,7 +9,7 @@ classDiagram
     direction LR
 
     class Manager {
-        -fstream f
+        -io::Port port
         -map~Type, queue_Frame~ frameStreams
         -DataStreams dataStreams
         -unique_ptr~Transmitter~ transmitter
@@ -35,8 +35,7 @@ classDiagram
     }
 
     class Receiver {
-        +string file
-        +fstream& f
+        +io::Port& port
         +map~Type, queue_Frame~& outQueues
         +run(stop_token)
     }
@@ -76,9 +75,9 @@ classDiagram
     }
 
     class Transmitter {
-        +fstream& f
-        +transmit(OperationType) bool
-        +request(stop_token, OperationType, systemQueue) bool
+        +io::Port& port
+        +transmit(OperationType) expected~void, Error~
+        +request(stop_token, OperationType, systemQueue) expected~void, Error~
     }
 
     Manager *-- DataStreams : owns
@@ -90,12 +89,12 @@ classDiagram
     ParserBase <|-- Parser_T
     Distributor <|-- DeviceController
     Distributor <|-- Plotter_T
-    Receiver --> Manager : borrows fstream and frame queues
+    Receiver --> Manager : borrows port and frame queues
     Parser_T --> Manager : borrows typed queues
     DeviceController --> Transmitter : borrows
     DeviceController --> DataStreams : borrows system queue
     Plotter_T --> DataStreams : borrows data queue
-    Transmitter --> Manager : borrows fstream
+    Transmitter --> Manager : borrows port
 ```
 
 `Worker<Component>` owns one runnable component and its `std::jthread`. Every runnable component exposes `run(std::stop_token)`, allowing the worker to start any component without component-specific dispatch logic.
@@ -110,8 +109,8 @@ using DistributorWorker = Worker<distributor::Distributor>;
 
 ```mermaid
 flowchart LR
-    source[Device or input file]
-    io[(Manager::f)]
+    source[Serial device]
+    io[(Manager::port)]
     receiver[ReceiverWorker]
     systemFrames[(SYSTEM Frame queue)]
     lidarFrames[(LIDAR Frame queue)]
@@ -135,6 +134,8 @@ flowchart LR
 ```
 
 Frames are routed into a separate queue for each `frame::Type`. This prevents SYSTEM and LIDAR parsers from competing for frames in a shared input queue.
+
+`Manager` owns one `io::Port`. `Receiver` reads incoming bytes from its POSIX file descriptor, while `Transmitter` writes commands through the same port.
 
 ## Initialization and Execution
 
@@ -168,6 +169,5 @@ sequenceDiagram
 
 - The queues are accessed from multiple threads, but `std::queue` is not thread-safe. A synchronized queue abstraction is still required.
 - Empty queues are polled continuously, creating busy-wait loops. A condition variable or blocking queue would avoid unnecessary CPU use.
-- `Receiver` and `Transmitter` access the same `std::fstream` from different workers. Their access must be synchronized.
 - `frameStreams` and the queues inside `DataStreams` are heap-allocated even though `Manager` has sole ownership. They could be stored directly unless stable indirection is required.
 - Initialization is listed explicitly for every frame type. This is verbose, but keeps the mapping between frame type, parsed data type, and distributor visible.
