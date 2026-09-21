@@ -1,4 +1,5 @@
 #pragma once
+#include <chrono>
 #include <map>
 #include <cstddef>
 #include <cstdint>
@@ -8,8 +9,8 @@
 namespace frame
 {
 
-extern const int     OPERATION_TIMEOUT;
-extern const uint8_t START_OF_FRAME[];
+extern const std::chrono::milliseconds OPERATION_TIMEOUT;
+extern const uint8_t                   START_OF_FRAME[];
 
 // TODO 更新する
 enum class OperationType

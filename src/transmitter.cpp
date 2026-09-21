@@ -1,6 +1,7 @@
 #include "transmitter.hpp"
 #include "frame.hpp"
 #include "io.hpp"
+#include <chrono>
 #include <print>
 #include <queue>
 #include <span>
@@ -28,12 +29,18 @@ std::expected<void, error::Error> Transmitter::request(
 
         std::println("{}: TRANSMIT {}", std::this_thread::get_id(), frame::toString(type));
 
+        const auto deadline = std::chrono::steady_clock::now() + frame::OPERATION_TIMEOUT;
+
         while (1) {
                 if (st.stop_requested())
-                        return {};
+                        return std::unexpected(error::Error::THREAD_ABORTED);
 
-                if (mQueue.empty())
+                if (mQueue.empty()) {
+                        if (std::chrono::steady_clock::now() >= deadline)
+                                return std::unexpected(error::Error::OPERATION_TIMEOUT);
+
                         continue;
+                }
 
                 auto res = mQueue.front();
                 std::println("{}: RECEIVE {}", std::this_thread::get_id(), res);

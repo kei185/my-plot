@@ -9,7 +9,7 @@
 
 namespace frame
 {
-const int OPERATION_TIMEOUT = 1000; // ms
+const std::chrono::milliseconds OPERATION_TIMEOUT(1000);
 
 // TODO byteサイズ数値になおす
 const size_t            FRAME_HEADER_SIZE = sizeof(FrameHeader);
