@@ -10,7 +10,9 @@ enum class Error
 {
         OPEN_FILE_FAILED,
         CLOSE_FILE_FAILED,
-        NODE_INIT_FAILED,
+        RECEIVER_INIT_FAILED,
+        PARSER_INIT_FAILED,
+        DISTRIBUTOR_INIT_FAILED,
         FILE_INTERNAL_ERROR,
         IO_READ_FAILED,
         IO_WRITE_FAILED,
@@ -26,8 +28,12 @@ constexpr std::string_view toString(Error error)
                         return "OPEN_FILE_FAILED";
                 case Error::CLOSE_FILE_FAILED:
                         return "CLOSE_FILE_FAILED";
-                case Error::NODE_INIT_FAILED:
-                        return "NODE_INIT_FAILED";
+                case Error::RECEIVER_INIT_FAILED:
+                        return "RECEIVER_INIT_FAILED";
+                case Error::PARSER_INIT_FAILED:
+                        return "PARSER_INIT_FAILED";
+                case Error::DISTRIBUTOR_INIT_FAILED:
+                        return "DISTRIBUTOR_INIT_FAILED";
                 case Error::FILE_INTERNAL_ERROR:
                         return "FILE_INTERNAL_ERROR";
                 case Error::IO_READ_FAILED:

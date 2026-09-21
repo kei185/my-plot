@@ -22,7 +22,7 @@ using namespace error;
 namespace manager
 {
 
-template <typename T> struct Worker
+template <typename T, Error InitError> struct Worker
 {
         std::unique_ptr<T> instance;
         std::jthread       thread;
@@ -30,7 +30,7 @@ template <typename T> struct Worker
         std::expected<void, Error> dispatch()
         {
                 if (!this->instance)
-                        return std::unexpected<Error>(Error::NODE_INIT_FAILED);
+                        return std::unexpected<Error>(InitError);
 
                 this->thread = std::jthread([component = this->instance.get()](std::stop_token st) {
                         component->run(st);
@@ -42,7 +42,7 @@ template <typename T> struct Worker
         std::expected<void, Error> abort()
         {
                 if (!this->instance)
-                        return std::unexpected<Error>(Error::NODE_INIT_FAILED);
+                        return std::unexpected<Error>(InitError);
 
                 this->thread.request_stop();
 
@@ -50,9 +50,9 @@ template <typename T> struct Worker
         }
 };
 
-using ReceiverWorker    = Worker<receiver::Receiver>;
-using ParserWorker      = Worker<parser::ParserBase>;
-using DistributorWorker = Worker<distributor::Distributor>;
+using ReceiverWorker    = Worker<receiver::Receiver, Error::RECEIVER_INIT_FAILED>;
+using ParserWorker      = Worker<parser::ParserBase, Error::PARSER_INIT_FAILED>;
+using DistributorWorker = Worker<distributor::Distributor, Error::DISTRIBUTOR_INIT_FAILED>;
 
 struct DataStreams
 {

@@ -3,7 +3,6 @@
 #include <memory>
 #include <queue>
 #include <unistd.h>
-#include <cstdlib>
 #include <map>
 
 #include "distributor.hpp"
@@ -13,7 +12,8 @@
 #include "receiver.hpp"
 #include "transmitter.hpp"
 #include "io.hpp"
-#include "logger.hpp"
+#include "utility/logger.hpp"
+#include "utility/unwrap.hpp"
 #include "manager.hpp"
 
 using namespace error;
@@ -29,19 +29,25 @@ Manager::Manager(const std::string file)
     : port(file), frameStreams(std::make_unique<std::map<frame::Type, std::queue<frame::Frame>>>()),
       dataStreams(DataStreams()), transmitter(), receiverWorker(), parsers(), distributors()
 {
+        // prepare transmitter
         this->transmitter = std::make_unique<transmitter::Transmitter>(this->port);
 
+        // prepare frame streams
         for (auto type : frame::TYPES)
                 this->frameStreams->emplace(type, std::queue<frame::Frame>());
 
+        // prepare receiver
         this->receiverWorker.instance =
                 std::make_unique<receiver::Receiver>(this->port, *this->frameStreams);
 
-        if (!Manager::initParsers(this->parsers, *this->frameStreams, this->dataStreams))
-                std::exit(1);
+        // prepare parsers
+        unwrap(Manager::initParsers(this->parsers, *this->frameStreams, this->dataStreams));
 
-        if (!Manager::initDistributors(this->distributors, this->dataStreams, *this->transmitter))
-                std::exit(1);
+        // prepare distributors
+        unwrap(Manager::initDistributors(
+                this->distributors,
+                this->dataStreams,
+                *this->transmitter));
 }
 
 Manager::~Manager()
@@ -82,7 +88,7 @@ std::expected<void, Error> Manager::initParsers(
 {
         for (auto type : frame::TYPES)
                 if (auto [it, success] = parsers.try_emplace(type); !success)
-                        return std::unexpected<Error>(Error::NODE_INIT_FAILED);
+                        return std::unexpected<Error>(Error::PARSER_INIT_FAILED);
 
         frame::Type type;
 
@@ -109,7 +115,7 @@ std::expected<void, Error> Manager::initDistributors(
 
         for (auto type : frame::TYPES)
                 if (auto [it, success] = distributors.try_emplace(type); !success)
-                        return std::unexpected<Error>(Error::NODE_INIT_FAILED);
+                        return std::unexpected<Error>(Error::DISTRIBUTOR_INIT_FAILED);
 
         frame::Type type;
 

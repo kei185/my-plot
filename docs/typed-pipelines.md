@@ -208,7 +208,7 @@ using LidarPipeline = Pipeline<
     NoiseFilter>;
 ```
 
-The pipeline would remain a component managed by `Worker<Pipeline>`:
+The pipeline would remain a component managed by `Worker<Pipeline, InitError>`:
 
 ```mermaid
 flowchart TB
@@ -257,7 +257,7 @@ Use compile-time pipelines unless runtime reconfiguration is an explicit require
 1. Represent each transformation as a small function object with `Input`, `Output`, and `operator()`.
 2. Store the ordered stage objects in a `std::tuple`.
 3. Validate every adjacent input/output pair at compile time.
-4. Let `Manager` own the external queues and let `Worker<Pipeline>` own pipeline execution.
+4. Let `Manager` own the external queues and let `Worker<Pipeline, InitError>` own pipeline execution.
 5. Begin with one worker per complete pipeline; introduce intermediate queues only when measurement shows that independent stage execution is useful.
 
 This design keeps routing, transformation, and execution as separate concerns while preserving static type safety.

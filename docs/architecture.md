@@ -97,12 +97,12 @@ classDiagram
     Transmitter --> Manager : borrows port
 ```
 
-`Worker<Component>` owns one runnable component and its `std::jthread`. Every runnable component exposes `run(std::stop_token)`, allowing the worker to start any component without component-specific dispatch logic.
+`Worker<Component, InitError>` owns one runnable component and its `std::jthread`. Every runnable component exposes `run(std::stop_token)`, allowing the worker to start any component without component-specific dispatch logic. `InitError` selects the error returned if the component is missing.
 
 ```cpp
-using ReceiverWorker    = Worker<receiver::Receiver>;
-using ParserWorker      = Worker<parser::ParserBase>;
-using DistributorWorker = Worker<distributor::Distributor>;
+using ReceiverWorker    = Worker<receiver::Receiver, Error::RECEIVER_INIT_FAILED>;
+using ParserWorker      = Worker<parser::ParserBase, Error::PARSER_INIT_FAILED>;
+using DistributorWorker = Worker<distributor::Distributor, Error::DISTRIBUTOR_INIT_FAILED>;
 ```
 
 ## Data Flow

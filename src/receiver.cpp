@@ -4,7 +4,6 @@
 #include <expected>
 #include <stop_token>
 #include <unistd.h>
-#include <cstdlib>
 #include <span>
 #include <vector>
 
@@ -14,27 +13,12 @@
 #include "error.hpp"
 #include "frame.hpp"
 #include "io.hpp"
-#include "logger.hpp"
+#include "utility/unwrap.hpp"
 
 using namespace error;
 
 namespace receiver
 {
-
-inline void abortByError(Error err)
-{
-        logger::log(err);
-        // TODO 必要なら復帰プロセスを考える
-        std::exit(1);
-}
-
-template <typename T> T unwrap(const std::expected<T, Error>&& result)
-{
-        if (!result.has_value())
-                abortByError(result.error());
-
-        return result.value();
-}
 
 Receiver::Receiver(io::Port& port, std::map<frame::Type, std::queue<frame::Frame>>& frameStreams)
     : port(port), frameStreams(frameStreams)

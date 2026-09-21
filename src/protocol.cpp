@@ -6,7 +6,8 @@
 #include <string>
 #include <iostream>
 #include "frame.hpp"
-#include "logger.hpp"
+#include "utility/logger.hpp"
+#include "utility/unwrap.hpp"
 #include "transmitter.hpp"
 #include "protocol.hpp"
 
@@ -48,9 +49,7 @@ void run(
         logger::log("SCAN STARTED");
         logger::log("SCAN STARTEDってこと!?");
 
-        if (auto result = transmitter.request(st, frame::OperationType::START_SCAN, mQueue);
-            !result)
-                std::exit(1);
+        unwrap(transmitter.request(st, frame::OperationType::START_SCAN, mQueue));
 };
 
 } // namespace protocol

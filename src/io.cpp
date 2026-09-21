@@ -2,12 +2,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <format>
 #include <span>
 #include <unistd.h>
 #include <string>
 #include <termios.h>
 #include <fcntl.h>
 #include "io.hpp"
+#include "utility/logger.hpp"
 
 namespace io
 {
@@ -17,8 +19,11 @@ Port::Port(std::string path)
 {
 
         this->fd = open((char*)path.data(), O_RDWR | O_NOCTTY);
-        if (this->fd == -1)
-                std::exit(errno);
+        if (this->fd == -1) {
+                const int openError = errno;
+                logger::log(std::format("failed to open {}: errno={}", path, openError));
+                std::exit(openError);
+        }
 
         this->tty = {};
 
