@@ -1,12 +1,12 @@
 #include "transmitter.hpp"
 #include "frame.hpp"
 #include "io.hpp"
+#include "logger.hpp"
 #include <chrono>
-#include <print>
+#include <format>
 #include <queue>
 #include <span>
 #include <stop_token>
-#include <thread>
 
 namespace transmitter
 {
@@ -27,7 +27,7 @@ std::expected<void, error::Error> Transmitter::request(
         if (auto result = this->transmit(type); !result)
                 return result;
 
-        std::println("{}: TRANSMIT {}", std::this_thread::get_id(), frame::toString(type));
+        logger::log(std::format("TRANSMIT {}", frame::toString(type)));
 
         const auto deadline = std::chrono::steady_clock::now() + frame::OPERATION_TIMEOUT;
 
@@ -43,7 +43,7 @@ std::expected<void, error::Error> Transmitter::request(
                 }
 
                 auto res = mQueue.front();
-                std::println("{}: RECEIVE {}", std::this_thread::get_id(), res);
+                logger::log(std::format("RECEIVE {}", res));
                 return {};
         }
 };

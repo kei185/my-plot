@@ -1,9 +1,7 @@
 #include <cstddef>
 #include <expected>
 #include <memory>
-#include <print>
 #include <queue>
-#include <thread>
 #include <unistd.h>
 #include <cstdlib>
 #include <map>
@@ -15,6 +13,7 @@
 #include "receiver.hpp"
 #include "transmitter.hpp"
 #include "io.hpp"
+#include "logger.hpp"
 #include "manager.hpp"
 
 using namespace error;
@@ -51,17 +50,11 @@ Manager::~Manager()
 
         for (auto& [_, p] : this->parsers)
                 if (auto _result = p.abort(); !_result.has_value())
-                        std::println(
-                                "{}: {}",
-                                std::this_thread::get_id(),
-                                toString(_result.error()));
+                        logger::log(_result.error());
 
         for (auto& [_, d] : this->distributors)
                 if (auto _result = d.abort(); !_result.has_value())
-                        std::println(
-                                "{}: {}",
-                                std::this_thread::get_id(),
-                                toString(_result.error()));
+                        logger::log(_result.error());
 }
 
 std::expected<void, Error> Manager::run()

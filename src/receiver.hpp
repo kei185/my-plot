@@ -27,7 +27,7 @@ struct Receiver
 
         void run(std::stop_token);
 
-        static std::expected<void, Error>               findSOF(std::stop_token&, io::Port&);
+        static std::expected<bool, Error>               findSOF(std::stop_token&, io::Port&);
         static std::expected<frame::FrameHeader, Error> getFrameHeader(io::Port&);
         static std::expected<frame::Frame, Error> getPayload(io::Port&, const frame::FrameHeader&);
         static bool isValidCRC(std::span<const uint8_t, frame::RAW_HEADER_SIZE>);

@@ -1,6 +1,5 @@
 #include "manager.hpp"
-#include "error.hpp"
-#include <print>
+#include "logger.hpp"
 // TODO
 const std::string device = "/dev/tty.hoge";
 
@@ -9,7 +8,7 @@ int main()
         manager::Manager m(device);
 
         if (auto result = m.run(); !result.has_value())
-                std::println("{}", error::toString(result.error()));
+                logger::log(result.error());
 }
 
 // #include <iostream>

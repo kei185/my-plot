@@ -2,9 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <expected>
-#include <print>
 #include <stop_token>
-#include <thread>
 #include <unistd.h>
 #include <cstdlib>
 #include <span>
@@ -16,6 +14,7 @@
 #include "error.hpp"
 #include "frame.hpp"
 #include "io.hpp"
+#include "logger.hpp"
 
 using namespace error;
 
@@ -24,7 +23,7 @@ namespace receiver
 
 inline void abortByError(Error err)
 {
-        std::println("{}: {}", std::this_thread::get_id(), toString(err));
+        logger::log(err);
         // TODO 必要なら復帰プロセスを考える
         std::exit(1);
 }
@@ -47,10 +46,13 @@ void Receiver::run(std::stop_token st)
         frame::Frame                             fr;
 
         while (1) {
-                unwrap(this->findSOF(st, this->port));
+                // drain bytes until SOF is found
+                // return if thread aborted
+                if (!unwrap(this->findSOF(st, this->port)))
+                        return;
 
+                // read frame header
                 frh = this->getFrameHeader(this->port);
-
                 if (!frh.has_value()) {
                         if (frh.error() == error::Error::INVALID_CRC)
                                 continue;
@@ -58,22 +60,27 @@ void Receiver::run(std::stop_token st)
                                 abortByError(frh.error());
                 }
 
+                // read payload
                 fr = unwrap(this->getPayload(this->port, frh.value()));
 
+                // push frame to queue
                 this->frameStreams[fr.type].push(fr);
         }
 
         return;
 }
 
-std::expected<void, Error> Receiver::findSOF(std::stop_token& st, io::Port& port)
+/**
+ * @return false if the thread is stopped, true if the SOF is found
+ */
+std::expected<bool, Error> Receiver::findSOF(std::stop_token& st, io::Port& port)
 {
         std::array<uint8_t, 1> byte       = {};
         bool                   firstFound = false;
 
         while (1) {
                 if (st.stop_requested())
-                        return {};
+                        return false;
 
                 if (auto result = port.readRaw(byte); !result)
                         return std::unexpected<Error>(result.error());
@@ -84,7 +91,7 @@ std::expected<void, Error> Receiver::findSOF(std::stop_token& st, io::Port& port
                 firstFound = byte[0] == frame::START_OF_FRAME[0];
         }
 
-        return {};
+        return true;
 };
 
 std::expected<frame::FrameHeader, Error> Receiver::getFrameHeader(io::Port& port)

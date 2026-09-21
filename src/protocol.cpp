@@ -5,8 +5,8 @@
 #include <stop_token>
 #include <string>
 #include <iostream>
-#include <thread>
 #include "frame.hpp"
+#include "logger.hpp"
 #include "transmitter.hpp"
 #include "protocol.hpp"
 
@@ -25,7 +25,7 @@ static void waitforReady(std::stop_token& st, std::queue<frame::systemMessage>& 
 
                 sm = mQueue.front();
 
-                std::println("{}: {}", std::this_thread::get_id(), sm);
+                logger::log(sm);
 
                 mQueue.pop();
                 // TODO type code を確認するようにする
@@ -41,12 +41,12 @@ void run(
         if (st.stop_requested())
                 return;
 
-        std::println("{}: {}", std::this_thread::get_id(), "press ENTER to start scan");
+        std::println("press ENTER to start scan");
         std::string s;
         std::getline(std::cin, s);
 
-        std::println("{}: {}", std::this_thread::get_id(), "SCAN STARTED");
-        std::println("{}: {}", std::this_thread::get_id(), "SCAN STARTEDってこと!?");
+        logger::log("SCAN STARTED");
+        logger::log("SCAN STARTEDってこと!?");
 
         if (auto result = transmitter.request(st, frame::OperationType::START_SCAN, mQueue);
             !result)
