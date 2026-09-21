@@ -10,6 +10,8 @@
 #include <span>
 #include <vector>
 
+#include <boost/crc.hpp>
+
 #include "receiver.hpp"
 #include "error.hpp"
 #include "frame.hpp"
@@ -23,6 +25,7 @@ namespace receiver
 inline void abortByError(Error err)
 {
         std::println("{}: {}", std::this_thread::get_id(), toString(err));
+        // TODO 必要なら復帰プロセスを考える
         std::exit(1);
 }
 
@@ -40,17 +43,22 @@ Receiver::Receiver(io::Port& port, std::map<frame::Type, std::queue<frame::Frame
 
 void Receiver::run(std::stop_token st)
 {
-        frame::FrameHeader frh = {};
-        frame::Frame       fr;
+        std::expected<frame::FrameHeader, Error> frh;
+        frame::Frame                             fr;
+
         while (1) {
                 unwrap(this->findSOF(st, this->port));
 
-                frh = unwrap(this->getFrameHeader(this->port));
+                frh = this->getFrameHeader(this->port);
 
-                if (Receiver::isValidCRC(frh))
-                        continue;
+                if (!frh.has_value()) {
+                        if (frh.error() == error::Error::INVALID_CRC)
+                                continue;
+                        else
+                                abortByError(frh.error());
+                }
 
-                fr = unwrap(this->getPayload(this->port, frh));
+                fr = unwrap(this->getPayload(this->port, frh.value()));
 
                 this->frameStreams[fr.type].push(fr);
         }
@@ -66,9 +74,7 @@ std::expected<void, Error> Receiver::findSOF(std::stop_token& st, io::Port& port
                 if (st.stop_requested())
                         return {};
 
-                // TODO unwrapをつかう
-                if (auto result = port.readRaw(byte); !result)
-                        return std::unexpected<Error>(result.error());
+                unwrap(port.readRaw(byte));
 
                 if (byte[0] != frame::START_OF_FRAME[0])
                         continue;
@@ -87,18 +93,21 @@ std::expected<void, Error> Receiver::findSOF(std::stop_token& st, io::Port& port
 
 std::expected<frame::FrameHeader, Error> Receiver::getFrameHeader(io::Port& port)
 {
-        std::array<uint8_t, 8> rawHeader = {};
+        std::array<uint8_t, frame::RAW_HEADER_SIZE> rawHeader = {};
 
         auto result = port.readRaw(rawHeader);
         if (!result)
                 return std::unexpected<Error>(result.error());
 
+        if (!Receiver::isValidCRC(rawHeader))
+                return std::unexpected<Error>(error::Error::INVALID_CRC);
+
+        // TODO: low priority fix hard code
         frame::FrameHeader frh = {
-                .length = io::decodeBigEndian(std::span<const uint8_t, 2>(rawHeader.data(), 2)),
-                .crc    = rawHeader[2],
-                .type   = static_cast<frame::Type>(rawHeader[3]),
-                .timestamp =
-                        io::decodeBigEndian(std::span<const uint8_t, 4>(rawHeader.data() + 4, 4)),
+                .length    = io::decodeBigEndian(std::span<const uint8_t, 2>(rawHeader.data(), 2)),
+                .type      = static_cast<frame::Type>(rawHeader[frame::TYPE_OFFSET]),
+                .timestamp = io::decodeBigEndian(
+                        std::span<const uint8_t, 4>(rawHeader.data() + frame::TIMESTAMP_OFFSET, 4)),
         };
 
         return frh;
@@ -119,7 +128,15 @@ Receiver::getPayload(io::Port& port, const frame::FrameHeader& frh)
         return fr;
 }
 
-// TODO
-bool Receiver::isValidCRC(const frame::FrameHeader& fh) { return true; }
+bool Receiver::isValidCRC(std::span<const uint8_t, frame::RAW_HEADER_SIZE> rawHeader)
+{
+        const frame::Crc expected = rawHeader[frame::CRC_OFFSET];
+
+        boost::crc_optimal<8, 0x31, 0, 0, false, false> crc;
+
+        crc.process_bytes(rawHeader.data(), frame::CRC_OFFSET);
+
+        return crc.checksum() == expected;
+}
 
 } // namespace receiver

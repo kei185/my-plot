@@ -16,6 +16,7 @@ enum class Error
         IO_WRITE_FAILED,
         THREAD_ABORTED,
         OPERATION_TIMEOUT,
+        INVALID_CRC,
 };
 
 constexpr std::string_view toString(Error error)
@@ -37,6 +38,9 @@ constexpr std::string_view toString(Error error)
                         return "THREAD_ABORTED";
                 case Error::OPERATION_TIMEOUT:
                         return "OPERATION_TIMEOUT";
+                case Error::INVALID_CRC:
+                        return "INVALID_CRC";
+
                 default:
                         return "UNKNOWN";
         }

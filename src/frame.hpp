@@ -6,6 +6,9 @@
 #include <string_view>
 #include <vector>
 
+/**
+ * @see https://github.com/kei185/sensor-echo/blob/main/docs/frame.md#tx-frame
+ */
 namespace frame
 {
 
@@ -65,7 +68,6 @@ struct FrameHeader
 {
 
         uint16_t length;
-        uint8_t  crc;
         Type     type;
         uint32_t timestamp;
 };
@@ -80,6 +82,14 @@ struct Frame
         Type                 type;
         std::vector<uint8_t> payload;
 };
+using Crc     = uint8_t;
+using CrcData = uint16_t;
+
+// the base is at the payload length byte field
+inline constexpr size_t CRC_OFFSET       = sizeof(CrcData);
+inline constexpr size_t TYPE_OFFSET      = CRC_OFFSET + sizeof(Crc);
+inline constexpr size_t TIMESTAMP_OFFSET = TYPE_OFFSET + sizeof(Type);
+inline constexpr size_t RAW_HEADER_SIZE  = TIMESTAMP_OFFSET + sizeof(uint32_t);
 
 struct LidarPoint
 {

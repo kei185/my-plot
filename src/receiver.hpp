@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <queue>
+#include <span>
 #include <stop_token>
 #include <unistd.h>
 #include <cstdlib>
@@ -27,9 +29,7 @@ struct Receiver
 
         static std::expected<void, Error>               findSOF(std::stop_token&, io::Port&);
         static std::expected<frame::FrameHeader, Error> getFrameHeader(io::Port&);
-        // TODO 実装する
-        static bool isValidCRC(const frame::FrameHeader&);
-        static std::expected<frame::Frame, Error>
-        getPayload(io::Port&, const frame::FrameHeader&);
+        static std::expected<frame::Frame, Error> getPayload(io::Port&, const frame::FrameHeader&);
+        static bool isValidCRC(std::span<const uint8_t, frame::RAW_HEADER_SIZE>);
 };
 } // namespace receiver
