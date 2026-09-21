@@ -68,24 +68,20 @@ void Receiver::run(std::stop_token st)
 
 std::expected<void, Error> Receiver::findSOF(std::stop_token& st, io::Port& port)
 {
-        std::array<uint8_t, 1> byte = {};
+        std::array<uint8_t, 1> byte       = {};
+        bool                   firstFound = false;
 
         while (1) {
                 if (st.stop_requested())
                         return {};
 
-                unwrap(port.readRaw(byte));
-
-                if (byte[0] != frame::START_OF_FRAME[0])
-                        continue;
-
                 if (auto result = port.readRaw(byte); !result)
                         return std::unexpected<Error>(result.error());
 
-                if (byte[0] != frame::START_OF_FRAME[1])
-                        continue;
+                if (firstFound && byte[0] == frame::START_OF_FRAME[1])
+                        break;
 
-                break;
+                firstFound = byte[0] == frame::START_OF_FRAME[0];
         }
 
         return {};
