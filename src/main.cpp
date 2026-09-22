@@ -4,13 +4,14 @@
 
 int main(int argc, char* argv[])
 {
-        std::string path     = argv[1];
-        std::string baudRate = argv[2];
+        std::string path = argv[1];
 
-        if (!(path.empty() && baudRate.empty()))
-                std::println("invalid arguments");
+        if (path.empty())
+                std::println("error: invalid arguments");
 
-        manager::Manager m(path + " " + baudRate);
+        logger::log(std::format("TRY OPEN [{}] AS DEVICE FILE", path));
+
+        manager::Manager m(path);
 
         if (auto result = m.run(); !result.has_value())
                 logger::log(result.error());

@@ -1,4 +1,5 @@
 FORMAT_FILE := $(shell find src -name "*.cpp" -or -name "*.hpp" -type f)
+PORT:=$(shell ls /dev/tty.usb* )
 
 .PHONY:init  debug build clean
 
@@ -15,7 +16,7 @@ debug:
 	cmake --build build --verbose
 
 run:
-	build/main
+	build/main ${PORT}
 
 
 format:
