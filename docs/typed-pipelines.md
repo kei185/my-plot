@@ -22,6 +22,8 @@ flowchart LR
     consumer[Plotter or Recorder]
 
     frames --> parser --> raw --> converter --> points --> filter --> filtered --> consumer
+
+    linkStyle default stroke:#E5E7EB,stroke-width:2px;
 ```
 
 The transformation model is independent of the object that owns its queues and workers. In the current architecture, `Manager` owns those resources; a pipeline would only describe the ordered transformations.
@@ -224,6 +226,8 @@ flowchart TB
     manager -->|owns| output
     worker -->|owns| pipeline
     input --> pipeline --> output --> distributor
+
+    linkStyle default stroke:#E5E7EB,stroke-width:2px;
 ```
 
 This document describes an exploratory extension rather than the currently implemented architecture.

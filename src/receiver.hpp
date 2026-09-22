@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <queue>
+#include <map>
 #include <span>
 #include <stop_token>
 #include <unistd.h>

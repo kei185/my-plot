@@ -1,8 +1,10 @@
 #pragma once
+#include <array>
 #include <chrono>
-#include <map>
 #include <cstddef>
 #include <cstdint>
+#include <map>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -18,36 +20,43 @@ extern const uint8_t                   START_OF_FRAME[];
 // TODO 更新する
 enum class OperationType
 {
-        WAIT_READY,
-        GET_STATUS,
+        // WAIT_READY,
+        // GET_STATUS,
         START_SCAN,
-        END_SCAN,
+        // END_SCAN,
 };
 
 // TODO 更新する
 constexpr std::string_view toString(OperationType type)
 {
         switch (type) {
-                case OperationType::WAIT_READY:
-                        return "WAIT_READY";
-                case OperationType::GET_STATUS:
-                        return "GET_STATUS";
+                // case OperationType::WAIT_READY:
+                //         return "WAIT_READY";
+                // case OperationType::GET_STATUS:
+                //         return "GET_STATUS";
                 case OperationType::START_SCAN:
                         return "START_SCAN";
-                case OperationType::END_SCAN:
-                        return "END_SCAN";
+                // case OperationType::END_SCAN:
+                //         return "END_SCAN";
                 default:
                         return "UNKNOWN";
         }
 }
 
-// TODO
 enum class Type : uint8_t
 {
-        SYSTEM,
-        LIDAR,
-        // IMU,
-        // ENCODER
+        // Internal queue category; not a wire type.
+        SYSTEM = 0x00,
+        // below are wire types
+        LIDAR          = 0x01,
+        IMU            = 0x02,
+        ENCODER        = 0x03,
+        INITIALIZING   = 0x04,
+        DEVICE_INFO    = 0x05,
+        HEALTH_STATUS  = 0x06,
+        READY          = 0x07,
+        STARTUP_FAILED = 0x08,
+        UNKNOWN        = 0x09,
 };
 
 constexpr std::string_view toString(Type type)
@@ -57,8 +66,44 @@ constexpr std::string_view toString(Type type)
                         return "SYSTEM";
                 case Type::LIDAR:
                         return "LIDAR";
+                case Type::IMU:
+                        return "IMU";
+                case Type::ENCODER:
+                        return "ENCODER";
+                case Type::INITIALIZING:
+                        return "INITIALIZING";
+                case Type::DEVICE_INFO:
+                        return "DEVICE_INFO";
+                case Type::HEALTH_STATUS:
+                        return "HEALTH_STATUS";
+                case Type::READY:
+                        return "READY";
+                case Type::STARTUP_FAILED:
+                        return "STARTUP_FAILED";
                 default:
                         return "UNKNOWN";
+        }
+}
+
+constexpr Type frameQueueMUX(Type type)
+{
+        switch (type) {
+                case Type::LIDAR:
+                        // TODO
+                        // case Type::IMU:
+                        // case Type::ENCODER:
+                        return type;
+
+                case Type::SYSTEM:
+                case Type::INITIALIZING:
+                case Type::DEVICE_INFO:
+                case Type::HEALTH_STATUS:
+                case Type::READY:
+                case Type::STARTUP_FAILED:
+                        return Type::SYSTEM;
+
+                default:
+                        return Type::UNKNOWN;
         }
 }
 
@@ -98,16 +143,12 @@ struct LidarPoint
 };
 extern const size_t LIDAR_POINT_SIZE;
 
-using systemMessage = std::string;
-
-struct Operation
+struct systemMessage
 {
-        std::array<uint8_t, 2> command;
-        std::string            ack;
-
-        Operation(const std::array<uint8_t, 2>& command, const std::string& ack);
+        std::string message;
+        Type        type;
 };
 
-extern const std::map<OperationType, Operation> TX;
+extern const std::map<OperationType, std::array<uint8_t, 2>> TX;
 
 } // namespace frame

@@ -15,7 +15,7 @@ Transmitter::Transmitter(io::Port& port) : port(port) {}
 
 std::expected<void, error::Error> Transmitter::transmit(frame::OperationType type)
 {
-        const auto& command = frame::TX.at(type).command;
+        const auto& command = frame::TX.at(type);
         return this->port.writeRaw(std::span<const uint8_t>(command));
 }
 
@@ -43,7 +43,7 @@ std::expected<void, error::Error> Transmitter::request(
                 }
 
                 auto res = mQueue.front();
-                logger::log(std::format("RECEIVE {}", res));
+                logger::log(std::format("RECEIVE {}", res.message));
                 return {};
         }
 };

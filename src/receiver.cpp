@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <span>
 #include <vector>
+#include <map>
 
 #include <boost/crc.hpp>
 
@@ -48,7 +49,10 @@ void Receiver::run(std::stop_token st)
                 fr = unwrap(this->getPayload(this->port, frh.value()));
 
                 // push frame to queue
-                this->frameStreams[fr.type].push(fr);
+                auto type = frame::frameQueueMUX(fr.type);
+                if (type == frame::Type::UNKNOWN)
+                        continue;
+                this->frameStreams[type].push(fr);
         }
 
         return;

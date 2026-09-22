@@ -16,7 +16,7 @@ namespace protocol
 
 static void waitforReady(std::stop_token& st, std::queue<frame::systemMessage>& mQueue)
 {
-        std::string sm;
+        frame::systemMessage sm;
         do {
                 if (st.stop_requested())
                         return;
@@ -26,11 +26,10 @@ static void waitforReady(std::stop_token& st, std::queue<frame::systemMessage>& 
 
                 sm = mQueue.front();
 
-                logger::log(sm);
+                logger::log(sm.message);
 
                 mQueue.pop();
-                // TODO type code を確認するようにする
-        } while (sm != frame::TX.at(frame::OperationType::WAIT_READY).ack);
+        } while (sm.type != frame::Type::READY);
 }
 
 void run(

@@ -1,8 +1,10 @@
 
 #include <cstdint>
+#include <span>
 #include <vector>
 
 #include "frame.hpp"
+#include "io.hpp"
 #include "parser.hpp"
 
 namespace parser
@@ -12,20 +14,34 @@ template <>
 std::vector<frame::systemMessage> Parser<frame::systemMessage>::parsePayload(frame::Frame& fr)
 {
 
-        return (std::vector<frame::systemMessage>){
-                frame::systemMessage(reinterpret_cast<char*>(fr.payload.data()), fr.length)};
+        return {{
+                .message = std::string(fr.payload.begin(), fr.payload.end()),
+                .type    = fr.type,
+        }};
 }
 
 template <> std::vector<frame::LidarPoint> Parser<frame::LidarPoint>::parsePayload(frame::Frame& fr)
 {
-        std::vector<frame::LidarPoint> points      = {};
-        uint8_t*                       payloadHead = fr.payload.data();
+        std::vector<frame::LidarPoint> points = {};
 
-        for (int offset = 0; offset < fr.length; offset += frame::LIDAR_POINT_SIZE) {
-                // TODO litte endian バイトアクセスに合わせる
-                frame::LidarPoint* plp = (frame::LidarPoint*)(payloadHead + offset);
+        uint16_t angle_q6;
+        uint16_t dist;
 
-                points.push_back(*plp);
+        for (size_t offset = 0; offset + frame::LIDAR_POINT_SIZE <= fr.payload.size();
+             offset += frame::LIDAR_POINT_SIZE) {
+
+                const std::span<const uint8_t, 4> point = std::span<const uint8_t, 4>(
+                        fr.payload.data() + offset,
+                        frame::LIDAR_POINT_SIZE);
+
+                angle_q6 = io::decodeBigEndian(point.first<2>());
+                dist     = io::decodeBigEndian(point.last<2>());
+
+                points.push_back(
+                        {
+                                .dist  = dist,
+                                .angle = static_cast<float>(angle_q6) / 64.0f,
+                        });
         }
 
         return points;

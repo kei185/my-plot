@@ -5,6 +5,7 @@ This document describes the current implementation, including ownership, worker 
 ## Class Diagram
 
 ```mermaid
+%%{init: {"theme": "base", "themeVariables": {"darkMode": true, "background": "#1F2230", "primaryColor": "#303648", "primaryTextColor": "#E5E7EB", "primaryBorderColor": "#9CA3AF", "lineColor": "#E5E7EB", "textColor": "#E5E7EB"}}}%%
 classDiagram
     direction LR
 
@@ -112,6 +113,7 @@ flowchart LR
     source[Serial device]
     io[(Manager::port)]
     receiver[ReceiverWorker]
+    frameType{Valid frame type}
     systemFrames[(SYSTEM Frame queue)]
     lidarFrames[(LIDAR Frame queue)]
     systemParser[ParserWorker<br/>Parser of systemMessage]
@@ -125,21 +127,27 @@ flowchart LR
 
     source -->|incoming bytes| io
     io --> receiver
-    receiver -->|Frame type SYSTEM| systemFrames
-    receiver -->|Frame type LIDAR| lidarFrames
+    receiver --> frameType
+    frameType -->|Non-sensor messages: 0x04 to 0x08| systemFrames
+    frameType -->|Sensor data: LIDAR 0x01| lidarFrames
     systemFrames --> systemParser --> systemData --> controller
     lidarFrames --> lidarParser --> lidarData --> plotter --> output
     controller -->|operation request| transmitter
     transmitter -->|command bytes| io
+
+    linkStyle default stroke:#E5E7EB,stroke-width:2px;
 ```
 
-Frames are routed into a separate queue for each `frame::Type`. This prevents SYSTEM and LIDAR parsers from competing for frames in a shared input queue.
+The intended routing sends valid sensor data to its sensor-specific Frame queue and all non-sensor messages to the SYSTEM Frame queue. The currently defined non-sensor wire types are INITIALIZING (`0x04`), DEVICE_INFO (`0x05`), HEALTH_STATUS (`0x06`), READY (`0x07`), and STARTUP_FAILED (`0x08`). LIDAR (`0x01`) is the only sensor path with a queue and parser today; IMU (`0x02`) and Encoder (`0x03`) would need their own sensor paths when supported.
+
+The SYSTEM routing shown above is not implemented yet. `Receiver` currently uses the wire type directly as the `frameStreams` key, so types `0x04` through `0x08` create queues without a parser instead of reaching the SYSTEM queue. This remains part of [issue #1](https://github.com/kei185/my-plot/issues/1).
 
 `Manager` owns one `io::Port`. `Receiver` reads incoming bytes from its POSIX file descriptor, while `Transmitter` writes commands through the same port.
 
 ## Initialization and Execution
 
 ```mermaid
+%%{init: {"theme": "base", "themeVariables": {"darkMode": true, "background": "#1F2230", "primaryColor": "#303648", "primaryTextColor": "#E5E7EB", "primaryBorderColor": "#9CA3AF", "lineColor": "#E5E7EB", "textColor": "#E5E7EB", "actorLineColor": "#E5E7EB", "signalColor": "#E5E7EB", "signalTextColor": "#E5E7EB"}}}%%
 sequenceDiagram
     participant App
     participant Manager
