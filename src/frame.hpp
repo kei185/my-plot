@@ -118,9 +118,6 @@ struct FrameHeader
 };
 extern const size_t FRAME_HEADER_SIZE;
 
-/**
- * payload field holds raw byte array that must be accessed with little endian
- */
 struct Frame
 {
         uint16_t             length;
@@ -141,7 +138,7 @@ struct LidarPoint
         uint16_t dist;
         float    angle;
 };
-extern const size_t LIDAR_POINT_SIZE;
+constexpr size_t LIDAR_POINT_SIZE = 2 + 2;
 
 struct systemMessage
 {

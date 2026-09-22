@@ -30,7 +30,7 @@ template <> std::vector<frame::LidarPoint> Parser<frame::LidarPoint>::parsePaylo
         for (size_t offset = 0; offset + frame::LIDAR_POINT_SIZE <= fr.payload.size();
              offset += frame::LIDAR_POINT_SIZE) {
 
-                const std::span<const uint8_t, 4> point = std::span<const uint8_t, 4>(
+                const auto point = std::span<const uint8_t, frame::LIDAR_POINT_SIZE>(
                         fr.payload.data() + offset,
                         frame::LIDAR_POINT_SIZE);
 

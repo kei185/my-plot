@@ -1,11 +1,16 @@
 #include "manager.hpp"
 #include "utility/logger.hpp"
-// TODO
-const std::string device = "/dev/tty.hoge";
+#include <print>
 
-int main()
+int main(int argc, char* argv[])
 {
-        manager::Manager m(device);
+        std::string path     = argv[1];
+        std::string baudRate = argv[2];
+
+        if (!(path.empty() && baudRate.empty()))
+                std::println("invalid arguments");
+
+        manager::Manager m(path + " " + baudRate);
 
         if (auto result = m.run(); !result.has_value())
                 logger::log(result.error());

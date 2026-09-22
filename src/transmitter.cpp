@@ -15,6 +15,7 @@ Transmitter::Transmitter(io::Port& port) : port(port) {}
 
 std::expected<void, error::Error> Transmitter::transmit(frame::OperationType type)
 {
+        logger::log(std::format("TRANSMIT {}", frame::toString(type)));
         const auto& command = frame::TX.at(type);
         return this->port.writeRaw(std::span<const uint8_t>(command));
 }
@@ -24,17 +25,19 @@ std::expected<void, error::Error> Transmitter::request(
         frame::OperationType              type,
         std::queue<frame::systemMessage>& mQueue)
 {
+        // transmit
         if (auto result = this->transmit(type); !result)
                 return result;
 
-        logger::log(std::format("TRANSMIT {}", frame::toString(type)));
-
+        // set timeout
         const auto deadline = std::chrono::steady_clock::now() + frame::OPERATION_TIMEOUT;
 
         while (1) {
+                // check stop request
                 if (st.stop_requested())
                         return std::unexpected(error::Error::THREAD_ABORTED);
 
+                // check buffer
                 if (mQueue.empty()) {
                         if (std::chrono::steady_clock::now() >= deadline)
                                 return std::unexpected(error::Error::OPERATION_TIMEOUT);
@@ -44,6 +47,7 @@ std::expected<void, error::Error> Transmitter::request(
 
                 auto res = mQueue.front();
                 logger::log(std::format("RECEIVE {}", res.message));
+
                 return {};
         }
 };

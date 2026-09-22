@@ -10,7 +10,6 @@ namespace frame
 const std::chrono::milliseconds OPERATION_TIMEOUT(1000);
 
 const size_t            FRAME_HEADER_SIZE = RAW_HEADER_SIZE;
-const size_t            LIDAR_POINT_SIZE  = 2 + 2;
 const uint8_t           START_OF_FRAME[]  = {0xAA, 0x55};
 const std::vector<Type> TYPES             = {
         Type::SYSTEM,

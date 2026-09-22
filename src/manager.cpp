@@ -31,6 +31,7 @@ Manager::Manager(const std::string file)
 {
         // prepare transmitter
         this->transmitter = std::make_unique<transmitter::Transmitter>(this->port);
+        logger::log("TRANSMITTER DISPATCHED");
 
         // prepare frame streams
         for (auto type : frame::TYPES)
@@ -40,14 +41,20 @@ Manager::Manager(const std::string file)
         this->receiverWorker.instance =
                 std::make_unique<receiver::Receiver>(this->port, *this->frameStreams);
 
+        logger::log("RECEIVER DISPATCHED");
+
         // prepare parsers
         unwrap(Manager::initParsers(this->parsers, *this->frameStreams, this->dataStreams));
+
+        logger::log("PARSERS DISPATCHED");
 
         // prepare distributors
         unwrap(Manager::initDistributors(
                 this->distributors,
                 this->dataStreams,
                 *this->transmitter));
+
+        logger::log("DISTRIBUTORS DISPATCHED");
 }
 
 Manager::~Manager()
