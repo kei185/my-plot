@@ -2,8 +2,12 @@
 #include "frame.hpp"
 #include "transmitter.hpp"
 #include "utility/logger.hpp"
+#include <chrono>
+#include <cstdio>
+#include <deque>
 #include <queue>
 #include <stop_token>
+#include <string>
 
 namespace distributor
 {
@@ -46,21 +50,51 @@ template <typename T> void Plotter<T>::run(std::stop_token st)
                 return;
         }
 
-        // TODO
+        constexpr size_t MAX_POINTS      = 720;
+        constexpr auto   REDRAW_INTERVAL = std::chrono::milliseconds(50);
 
-        while (1) {
-                if (st.stop_requested())
-                        return;
+        std::fputs(
+                "set title 'LiDAR scan'\n"
+                "set polar\n"
+                "set angles degrees\n"
+                "set theta top clockwise\n"
+                "set size square\n"
+                "set grid polar 30\n"
+                "set rrange [0:*]\n"
+                "unset key\n"
+                "set style line 1 linecolor rgb '#00AEEF' pointtype 7 pointsize 0.5\n",
+                file);
 
+        std::deque<T> points;
+        auto          nextRedraw = std::chrono::steady_clock::now();
+
+        while (!st.stop_requested()) {
                 if (this->inQueue.empty())
                         continue;
 
-                T data = this->inQueue.front();
-
-                fprintf(file, reinterpret_cast<char*>(Plotter<T>::toString(data)));
-
+                points.push_back(this->inQueue.front());
                 this->inQueue.pop();
+
+                if (points.size() > MAX_POINTS)
+                        points.pop_front();
+
+                const auto now = std::chrono::steady_clock::now();
+                if (now < nextRedraw)
+                        continue;
+
+                std::fputs("plot '-' using 1:2 with points linestyle 1\n", file);
+                for (const auto& point : points) {
+                        const auto data = Plotter<T>::toString(point);
+                        std::fprintf(file, "%s\n", data.c_str());
+                }
+                std::fputs("e\n", file);
+                std::fflush(file);
+
+                nextRedraw = now + REDRAW_INTERVAL;
         }
+
+        std::fputs("exit\n", file);
+        pclose(file);
 }
 
 } // namespace distributor
