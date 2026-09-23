@@ -7,6 +7,7 @@
 #include <span>
 #include <vector>
 #include <map>
+#include <utility>
 
 #include <boost/crc.hpp>
 
@@ -15,13 +16,14 @@
 #include "frame.hpp"
 #include "io.hpp"
 #include "utility/unwrap.hpp"
+#include "xqueue.hpp"
 
 using namespace error;
 
 namespace receiver
 {
 
-Receiver::Receiver(io::Port& port, std::map<frame::Type, std::queue<frame::Frame>>& frameStreams)
+Receiver::Receiver(io::Port& port, std::map<frame::Type, xqueue::Queue<frame::Frame>>& frameStreams)
     : port(port), frameStreams(frameStreams)
 {}
 
@@ -52,7 +54,7 @@ void Receiver::run(std::stop_token st)
                 auto type = frame::frameQueueMUX(fr.type);
                 if (type == frame::Type::UNKNOWN)
                         continue;
-                this->frameStreams[type].push(fr);
+                this->frameStreams[type].push(std::move(fr));
         }
 
         return;

@@ -1,7 +1,6 @@
 #include <cstddef>
 #include <expected>
 #include <memory>
-#include <queue>
 #include <unistd.h>
 #include <map>
 
@@ -15,19 +14,21 @@
 #include "utility/logger.hpp"
 #include "utility/unwrap.hpp"
 #include "manager.hpp"
+#include "xqueue.hpp"
 
 using namespace error;
 
 namespace manager
 {
 DataStreams::DataStreams()
-    : system(std::make_unique<std::queue<frame::systemMessage>>()),
-      lidar(std::make_unique<std::queue<frame::LidarPoint>>())
+    : system(std::make_unique<xqueue::Queue<frame::systemMessage>>()),
+      lidar(std::make_unique<xqueue::Queue<frame::LidarPoint>>())
 {}
 
 // TODO: low priority constructor injection　のほうがわかりやすいかも
 Manager::Manager(const std::string file)
-    : port(file), frameStreams(std::make_unique<std::map<frame::Type, std::queue<frame::Frame>>>()),
+    : port(file),
+      frameStreams(std::make_unique<std::map<frame::Type, xqueue::Queue<frame::Frame>>>()),
       dataStreams(DataStreams()), transmitter(), receiverWorker(), parsers(), distributors()
 {
         // prepare transmitter
@@ -36,7 +37,7 @@ Manager::Manager(const std::string file)
 
         // prepare frame streams
         for (auto type : frame::TYPES)
-                this->frameStreams->emplace(type, std::queue<frame::Frame>());
+                this->frameStreams->try_emplace(type);
 
         // prepare receiver
         this->receiverWorker.instance =
@@ -92,9 +93,9 @@ std::expected<void, Error> Manager::run()
 }
 
 std::expected<void, Error> Manager::initParsers(
-        std::map<frame::Type, ParserWorker>&             parsers,
-        std::map<frame::Type, std::queue<frame::Frame>>& frameStreams,
-        DataStreams&                                     streams)
+        std::map<frame::Type, ParserWorker>&                parsers,
+        std::map<frame::Type, xqueue::Queue<frame::Frame>>& frameStreams,
+        DataStreams&                                        streams)
 {
         for (auto type : frame::TYPES)
                 if (auto [it, success] = parsers.try_emplace(type); !success)

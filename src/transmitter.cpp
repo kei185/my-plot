@@ -2,9 +2,9 @@
 #include "frame.hpp"
 #include "io.hpp"
 #include "utility/logger.hpp"
+#include "xqueue.hpp"
 #include <chrono>
 #include <format>
-#include <queue>
 #include <span>
 #include <stop_token>
 
@@ -35,9 +35,9 @@ std::expected<void, error::Error> Transmitter::transmit(frame::OperationType typ
  * Sends a request to the transmitter and waits for an ACK response.
  */
 std::expected<void, error::Error> Transmitter::request(
-        std::stop_token                   st,
-        frame::OperationType              type,
-        std::queue<frame::systemMessage>& mQueue)
+        std::stop_token                      st,
+        frame::OperationType                 type,
+        xqueue::Queue<frame::systemMessage>& mQueue)
 {
         // transmit
         if (auto result = this->transmit(type); !result)
@@ -60,8 +60,7 @@ std::expected<void, error::Error> Transmitter::request(
                         continue;
                 }
 
-                auto res = mQueue.front();
-                mQueue.pop();
+                auto res = mQueue.pop();
 
                 logger::log(std::format("RECEIVED {}", res.message));
                 if (res.type == frame::ACK_TYPE(type))

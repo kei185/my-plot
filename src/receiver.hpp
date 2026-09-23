@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <queue>
 #include <map>
 #include <span>
 #include <stop_token>
@@ -13,6 +12,7 @@
 #include "frame.hpp"
 #include "error.hpp"
 #include "io.hpp"
+#include "xqueue.hpp"
 
 using namespace error;
 
@@ -21,10 +21,10 @@ namespace receiver
 
 struct Receiver
 {
-        io::Port&                                        port;
-        std::map<frame::Type, std::queue<frame::Frame>>& frameStreams;
+        io::Port&                                           port;
+        std::map<frame::Type, xqueue::Queue<frame::Frame>>& frameStreams;
 
-        Receiver(io::Port&, std::map<frame::Type, std::queue<frame::Frame>>&);
+        Receiver(io::Port&, std::map<frame::Type, xqueue::Queue<frame::Frame>>&);
 
         void run(std::stop_token);
 
