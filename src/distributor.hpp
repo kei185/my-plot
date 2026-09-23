@@ -43,15 +43,14 @@ template <typename T> struct Plotter : Distributor
 
 template <typename T> void Plotter<T>::run(std::stop_token st)
 {
+        static size_t MAX_POINTS = 720;
+
         FILE* file = popen("gnuplot -persist", "w");
 
         if (file == nullptr) {
                 logger::log("OPEN PROCESS gnuplot FAILED");
                 return;
         }
-
-        constexpr size_t MAX_POINTS      = 720;
-        constexpr auto   REDRAW_INTERVAL = std::chrono::milliseconds(50);
 
         std::fputs(
                 "set title 'LiDAR scan'\n"
@@ -65,28 +64,28 @@ template <typename T> void Plotter<T>::run(std::stop_token st)
                 "set style line 1 linecolor rgb '#00AEEF' pointtype 7 pointsize 0.5\n",
                 file);
 
-        std::deque<T> points;
-        auto          nextRedraw = std::chrono::steady_clock::now();
+        constexpr auto                        REDRAW_INTERVAL = std::chrono::milliseconds(50);
+        std::deque<T>                         points;
+        std::chrono::steady_clock::time_point nextRedraw = std::chrono::steady_clock::now();
+        std::chrono::steady_clock::time_point now;
 
         while (!st.stop_requested()) {
                 if (this->inQueue.empty())
                         continue;
 
                 points.push_back(this->inQueue.front());
+
                 this->inQueue.pop();
 
                 if (points.size() > MAX_POINTS)
                         points.pop_front();
 
-                const auto now = std::chrono::steady_clock::now();
-                if (now < nextRedraw)
+                if ((now = std::chrono::steady_clock::now()) < nextRedraw)
                         continue;
 
                 std::fputs("plot '-' using 1:2 with points linestyle 1\n", file);
-                for (const auto& point : points) {
-                        const auto data = Plotter<T>::toString(point);
-                        std::fprintf(file, "%s\n", data.c_str());
-                }
+                for (const auto& point : points)
+                        std::fprintf(file, "%s\n", Plotter<T>::toString(point).c_str());
                 std::fputs("e\n", file);
                 std::fflush(file);
 
