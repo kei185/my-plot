@@ -1,5 +1,5 @@
 FORMAT_FILE := $(shell find src -name "*.cpp" -or -name "*.hpp" -type f)
-PORT:=$(shell ls /dev/tty.usb* )
+PORT:=$(shell ls /dev/cu.usb* )
 
 .PHONY:init  debug build clean
 

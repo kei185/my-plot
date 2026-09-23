@@ -13,13 +13,27 @@ namespace transmitter
 
 Transmitter::Transmitter(io::Port& port) : port(port) {}
 
+/**
+ * Transmits a frame of the given type of operation.
+ */
 std::expected<void, error::Error> Transmitter::transmit(frame::OperationType type)
 {
-        logger::log(std::format("TRANSMIT {}", frame::toString(type)));
-        const auto& command = frame::TX.at(type);
-        return this->port.writeRaw(std::span<const uint8_t>(command));
+        const auto& command = frame::OPERATION.at(type);
+
+        logger::log(std::format("TRANSMIT {} TRY", frame::toString(type)));
+
+        auto result = this->port.writeRaw(std::span<const uint8_t>(command));
+        if (!result)
+                return result;
+
+        logger::log(std::format("TRANSMIT {} DONE", frame::toString(type)));
+
+        return {};
 }
 
+/**
+ * Sends a request to the transmitter and waits for an ACK response.
+ */
 std::expected<void, error::Error> Transmitter::request(
         std::stop_token                   st,
         frame::OperationType              type,
@@ -39,6 +53,7 @@ std::expected<void, error::Error> Transmitter::request(
 
                 // check buffer
                 if (mQueue.empty()) {
+                        // if timeout
                         if (std::chrono::steady_clock::now() >= deadline)
                                 return std::unexpected(error::Error::OPERATION_TIMEOUT);
 
@@ -46,9 +61,11 @@ std::expected<void, error::Error> Transmitter::request(
                 }
 
                 auto res = mQueue.front();
-                logger::log(std::format("RECEIVE {}", res.message));
+                mQueue.pop();
 
-                return {};
+                logger::log(std::format("RECEIVED {}", res.message));
+                if (res.type == frame::ACK_TYPE(type))
+                        return {};
         }
 };
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "frame.hpp"
 #include "transmitter.hpp"
+#include "utility/logger.hpp"
 #include <queue>
 #include <stop_token>
 
@@ -32,12 +33,21 @@ template <typename T> struct Plotter : Distributor
         Plotter(frame::Type type, std::queue<T>& inQueue) : type(type), inQueue(inQueue) {}
         ~Plotter() {}
 
-        void        run(std::stop_token) override;
-        static void distributeStuff(T);
+        void               run(std::stop_token) override;
+        static std::string toString(T);
 };
 
 template <typename T> void Plotter<T>::run(std::stop_token st)
 {
+        FILE* file = popen("gnuplot -persist", "w");
+
+        if (file == nullptr) {
+                logger::log("OPEN PROCESS gnuplot FAILED");
+                return;
+        }
+
+        // TODO
+
         while (1) {
                 if (st.stop_requested())
                         return;
@@ -45,7 +55,9 @@ template <typename T> void Plotter<T>::run(std::stop_token st)
                 if (this->inQueue.empty())
                         continue;
 
-                Plotter<T>::distributeStuff(this->inQueue.front());
+                T data = this->inQueue.front();
+
+                fprintf(file, reinterpret_cast<char*>(Plotter<T>::toString(data)));
 
                 this->inQueue.pop();
         }

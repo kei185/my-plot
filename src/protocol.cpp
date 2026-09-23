@@ -16,6 +16,8 @@ namespace protocol
 
 static void waitforReady(std::stop_token& st, std::queue<frame::systemMessage>& mQueue)
 {
+        logger::log("WAITING FOR READY...");
+
         frame::systemMessage sm;
         do {
                 if (st.stop_requested())
@@ -26,7 +28,7 @@ static void waitforReady(std::stop_token& st, std::queue<frame::systemMessage>& 
 
                 sm = mQueue.front();
 
-                logger::log(sm.message);
+                logger::log(std::format("DEVICE '{}'", sm.message));
 
                 mQueue.pop();
         } while (sm.type != frame::Type::READY);
@@ -44,10 +46,6 @@ void run(
         std::println("press ENTER to start scan");
         std::string s;
         std::getline(std::cin, s);
-
-        logger::log("SCAN STARTED");
-        logger::log("SCAN STARTEDってこと!?");
-
         unwrap(transmitter.request(st, frame::OperationType::START_SCAN, mQueue));
 };
 

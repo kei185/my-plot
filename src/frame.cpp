@@ -23,8 +23,7 @@ const std::vector<Type> TYPES             = {
 static const std::array<uint8_t, 2> COMMAND_START_SCAN = {0xAA, 0xA2};
 // static const std::array<uint8_t, 2> COMMAND_END_SCAN   = {0xAA, 0xA3};
 
-const std::map<OperationType, std::array<uint8_t, 2>> TX = {
+const std::map<OperationType, std::array<uint8_t, 2>> OPERATION = {
         {OperationType::START_SCAN, COMMAND_START_SCAN},
 };
-
 } // namespace frame

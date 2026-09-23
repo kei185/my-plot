@@ -1,6 +1,7 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <format>
 #include <span>
@@ -18,12 +19,17 @@ static int BAUD_RATE = B230400;
 Port::Port(std::string path)
 {
 
+        logger::log(std::format("TRY OPEN [{}]", path));
+
         this->fd = open((char*)path.data(), O_RDWR | O_NOCTTY);
+
         if (this->fd == -1) {
                 const int openError = errno;
                 logger::log(std::format("failed to open {}: errno={}", path, openError));
                 std::exit(openError);
         }
+
+        logger::log(std::format(" [{}] OPENED", path));
 
         this->tty = {};
 
@@ -39,11 +45,16 @@ Port::Port(std::string path)
         this->tty.c_cflag &= ~PARENB;
         // stop bit 1bit
         this->tty.c_cflag &= ~CSTOPB;
+        this->tty.c_cflag &= ~CLOCAL;
         // 最低1文字読み出し
         tty.c_cc[VMIN] = 1;
         // タイムアウトなし
         tty.c_cc[VTIME] = 0;
         tcsetattr(this->fd, TCSANOW, &this->tty);
+
+        // // ブロッキングに戻す
+        // int flag = fcntl(this->fd, F_GETFL, 0);
+        // fcntl(this->fd, F_SETFL, flag & ~O_NONBLOCK);
 }
 
 Port::~Port()
@@ -90,6 +101,9 @@ std::expected<void, error::Error> Port::writeRaw(std::span<const uint8_t> bytes)
 
                 return std::unexpected(error::Error::IO_WRITE_FAILED);
         }
+
+        // if (fsync(this->fd) < 0)
+        //         return std::unexpected(error::Error::IO_WRITE_FAILED);
 
         return {};
 }

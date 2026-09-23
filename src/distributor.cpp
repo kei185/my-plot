@@ -2,7 +2,7 @@
 #include "protocol.hpp"
 #include "distributor.hpp"
 #include "frame.hpp"
-#include <print>
+#include <format>
 #include <stop_token>
 
 namespace distributor
@@ -19,9 +19,9 @@ void DeviceController::run(std::stop_token st)
         protocol::run(st, this->transmitter, this->inQueue);
 }
 
-template <> void Plotter<frame::LidarPoint>::distributeStuff(frame::LidarPoint m)
+template <> std::string Plotter<frame::LidarPoint>::toString(frame::LidarPoint m)
 {
-        std::println("{}, {}", m.dist, m.angle);
+        return std::format("{} {}", m.dist * cos(m.angle), m.dist * sin(m.angle));
 }
 
 } // namespace distributor

@@ -25,6 +25,7 @@ DataStreams::DataStreams()
       lidar(std::make_unique<std::queue<frame::LidarPoint>>())
 {}
 
+// TODO: low priority constructor injection　のほうがわかりやすいかも
 Manager::Manager(const std::string file)
     : port(file), frameStreams(std::make_unique<std::map<frame::Type, std::queue<frame::Frame>>>()),
       dataStreams(DataStreams()), transmitter(), receiverWorker(), parsers(), distributors()
@@ -55,6 +56,8 @@ Manager::Manager(const std::string file)
                 *this->transmitter));
 
         logger::log("DISTRIBUTORS DISPATCHED");
+
+        logger::log("APPLICATION RUNNING\n");
 }
 
 Manager::~Manager()
@@ -111,6 +114,8 @@ std::expected<void, Error> Manager::initParsers(
                 frameStreams[type],
                 *streams.lidar);
 
+        // TODO 追加する
+
         return {};
 }
 
@@ -133,6 +138,8 @@ std::expected<void, Error> Manager::initDistributors(
         type = frame::Type::LIDAR;
         distributors[type].instance =
                 std::make_unique<distributor::Plotter<frame::LidarPoint>>(type, *streams.lidar);
+
+        // TODO 追加する
 
         return {};
 }

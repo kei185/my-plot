@@ -1,6 +1,9 @@
 #include "manager.hpp"
 #include "utility/logger.hpp"
+#include <format>
 #include <print>
+#include <fcntl.h>
+#include <unistd.h>
 
 int main(int argc, char* argv[])
 {
@@ -9,11 +12,12 @@ int main(int argc, char* argv[])
         if (path.empty())
                 std::println("error: invalid arguments");
 
-        logger::log(std::format("TRY OPEN [{}] AS DEVICE FILE", path));
+        logger::log(std::format("RECEIVED ARGS [{}]", path));
 
-        manager::Manager m(path);
+        manager::Manager application(path);
 
-        if (auto result = m.run(); !result.has_value())
+        auto result = application.run();
+        if (!result)
                 logger::log(result.error());
 }
 

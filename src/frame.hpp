@@ -17,7 +17,6 @@ namespace frame
 extern const std::chrono::milliseconds OPERATION_TIMEOUT;
 extern const uint8_t                   START_OF_FRAME[];
 
-// TODO 更新する
 enum class OperationType
 {
         // WAIT_READY,
@@ -26,7 +25,11 @@ enum class OperationType
         // END_SCAN,
 };
 
-// TODO 更新する
+/**
+ * OperationType -> command
+ */
+extern const std::map<OperationType, std::array<uint8_t, 2>> OPERATION;
+
 constexpr std::string_view toString(OperationType type)
 {
         switch (type) {
@@ -56,8 +59,21 @@ enum class Type : uint8_t
         HEALTH_STATUS  = 0x06,
         READY          = 0x07,
         STARTUP_FAILED = 0x08,
-        UNKNOWN        = 0x09,
+        START_SCAN_ACK = 0x09,
+        UNKNOWN        = 0x10,
 };
+
+extern const std::vector<Type> TYPES;
+
+constexpr Type ACK_TYPE(OperationType type)
+{
+        switch (type) {
+                case OperationType::START_SCAN:
+                        return Type::START_SCAN_ACK;
+                default:
+                        return Type::UNKNOWN;
+        }
+}
 
 constexpr std::string_view toString(Type type)
 {
@@ -80,6 +96,8 @@ constexpr std::string_view toString(Type type)
                         return "READY";
                 case Type::STARTUP_FAILED:
                         return "STARTUP_FAILED";
+                case Type::START_SCAN_ACK:
+                        return "START_SCAN_ACK";
                 default:
                         return "UNKNOWN";
         }
@@ -100,14 +118,13 @@ constexpr Type frameQueueMUX(Type type)
                 case Type::HEALTH_STATUS:
                 case Type::READY:
                 case Type::STARTUP_FAILED:
+                case Type::START_SCAN_ACK:
                         return Type::SYSTEM;
 
                 default:
                         return Type::UNKNOWN;
         }
 }
-
-extern const std::vector<Type> TYPES;
 
 struct FrameHeader
 {
@@ -145,7 +162,5 @@ struct systemMessage
         std::string message;
         Type        type;
 };
-
-extern const std::map<OperationType, std::array<uint8_t, 2>> TX;
 
 } // namespace frame
