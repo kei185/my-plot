@@ -2,10 +2,10 @@
 #include "frame.hpp"
 #include "transmitter.hpp"
 #include "utility/logger.hpp"
+#include "xqueue.hpp"
 #include <chrono>
 #include <cstdio>
 #include <deque>
-#include <queue>
 #include <stop_token>
 #include <string>
 
@@ -20,21 +20,24 @@ struct Distributor
 
 struct DeviceController : Distributor
 {
-        frame::Type                       type;
-        transmitter::Transmitter&         transmitter;
-        std::queue<frame::systemMessage>& inQueue;
+        frame::Type                          type;
+        transmitter::Transmitter&            transmitter;
+        xqueue::Queue<frame::systemMessage>& inQueue;
 
         void run(std::stop_token) override;
 
-        DeviceController(frame::Type, transmitter::Transmitter&, std::queue<frame::systemMessage>&);
+        DeviceController(
+                frame::Type,
+                transmitter::Transmitter&,
+                xqueue::Queue<frame::systemMessage>&);
 };
 
 template <typename T> struct Plotter : Distributor
 {
-        frame::Type    type;
-        std::queue<T>& inQueue;
+        frame::Type       type;
+        xqueue::Queue<T>& inQueue;
 
-        Plotter(frame::Type type, std::queue<T>& inQueue) : type(type), inQueue(inQueue) {}
+        Plotter(frame::Type type, xqueue::Queue<T>& inQueue) : type(type), inQueue(inQueue) {}
         ~Plotter() {}
 
         void               run(std::stop_token) override;
@@ -73,9 +76,7 @@ template <typename T> void Plotter<T>::run(std::stop_token st)
                 if (this->inQueue.empty())
                         continue;
 
-                points.push_back(this->inQueue.front());
-
-                this->inQueue.pop();
+                points.push_back(this->inQueue.pop());
 
                 if (points.size() > MAX_POINTS)
                         points.pop_front();

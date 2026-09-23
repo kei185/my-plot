@@ -1,8 +1,8 @@
 
 #include "plot.hpp"
+#include "xqueue.hpp"
 #include <cmath>
 #include <format>
-#include <queue>
 #include <string>
 
 namespace plot
@@ -22,6 +22,6 @@ class Point
         std::string stringify() { return std::format("{} {}\r\n", this->x, this->y); }
 };
 
-void start(std::queue<Point> points) {}
+void start(xqueue::Queue<Point>& points) {}
 
 } // namespace plot

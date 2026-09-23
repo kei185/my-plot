@@ -1,7 +1,6 @@
 
 
 #include <print>
-#include <queue>
 #include <stop_token>
 #include <string>
 #include <iostream>
@@ -10,11 +9,12 @@
 #include "utility/unwrap.hpp"
 #include "transmitter.hpp"
 #include "protocol.hpp"
+#include "xqueue.hpp"
 
 namespace protocol
 {
 
-static void waitforReady(std::stop_token& st, std::queue<frame::systemMessage>& mQueue)
+static void waitforReady(std::stop_token& st, xqueue::Queue<frame::systemMessage>& mQueue)
 {
         logger::log("WAITING FOR READY...");
 
@@ -26,18 +26,16 @@ static void waitforReady(std::stop_token& st, std::queue<frame::systemMessage>& 
                 if (mQueue.empty())
                         continue;
 
-                sm = mQueue.front();
+                sm = mQueue.pop();
 
                 logger::log(std::format("DEVICE '{}'", sm.message));
-
-                mQueue.pop();
         } while (sm.type != frame::Type::READY);
 }
 
 void run(
-        std::stop_token                   st,
-        transmitter::Transmitter&         transmitter,
-        std::queue<frame::systemMessage>& mQueue)
+        std::stop_token                      st,
+        transmitter::Transmitter&            transmitter,
+        xqueue::Queue<frame::systemMessage>& mQueue)
 {
         waitforReady(st, mQueue);
         if (st.stop_requested())

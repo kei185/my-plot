@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <expected>
 #include <memory>
-#include <queue>
 #include <thread>
 #include <unistd.h>
 #include <cstdlib>
@@ -16,6 +15,7 @@
 #include "io.hpp"
 #include "receiver.hpp"
 #include "transmitter.hpp"
+#include "xqueue.hpp"
 
 using namespace error;
 
@@ -56,8 +56,8 @@ using DistributorWorker = Worker<distributor::Distributor, Error::DISTRIBUTOR_IN
 
 struct DataStreams
 {
-        std::unique_ptr<std::queue<frame::systemMessage>> system;
-        std::unique_ptr<std::queue<frame::LidarPoint>>    lidar;
+        std::unique_ptr<xqueue::Queue<frame::systemMessage>> system;
+        std::unique_ptr<xqueue::Queue<frame::LidarPoint>>    lidar;
         DataStreams();
 };
 
@@ -65,8 +65,8 @@ struct Manager
 {
         io::Port port;
 
-        std::unique_ptr<std::map<frame::Type, std::queue<frame::Frame>>> frameStreams;
-        DataStreams                                                      dataStreams;
+        std::unique_ptr<std::map<frame::Type, xqueue::Queue<frame::Frame>>> frameStreams;
+        DataStreams                                                         dataStreams;
 
         std::unique_ptr<transmitter::Transmitter> transmitter;
         ReceiverWorker                            receiverWorker;
@@ -79,7 +79,7 @@ struct Manager
 
         static std::expected<void, Error> initParsers(
                 std::map<frame::Type, ParserWorker>&,
-                std::map<frame::Type, std::queue<frame::Frame>>&,
+                std::map<frame::Type, xqueue::Queue<frame::Frame>>&,
                 DataStreams&);
 
         static std::expected<void, Error> initDistributors(

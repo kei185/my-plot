@@ -1,9 +1,10 @@
 #pragma once
-#include <queue>
 #include <stop_token>
+#include <utility>
 #include <vector>
 
 #include "frame.hpp"
+#include "xqueue.hpp"
 
 namespace parser
 {
@@ -15,11 +16,11 @@ struct ParserBase
 
 template <typename T> struct Parser : public ParserBase
 {
-        frame::Type               type;
-        std::queue<frame::Frame>& inQueue;
-        std::queue<T>&            outQueue;
+        frame::Type                  type;
+        xqueue::Queue<frame::Frame>& inQueue;
+        xqueue::Queue<T>&            outQueue;
 
-        Parser(frame::Type type, std::queue<frame::Frame>& inQueue, std::queue<T>& outQueue)
+        Parser(frame::Type type, xqueue::Queue<frame::Frame>& inQueue, xqueue::Queue<T>& outQueue)
             : type(type), inQueue(inQueue), outQueue(outQueue)
         {}
 
@@ -36,10 +37,10 @@ template <typename T> void Parser<T>::run(std::stop_token st)
                 if (this->inQueue.empty())
                         continue;
 
-                frame::Frame fr = this->inQueue.front();
+                frame::Frame fr = this->inQueue.pop();
 
-                this->inQueue.pop();
-                this->outQueue.push_range(Parser<T>::parsePayload(fr));
+                for (auto& data : Parser<T>::parsePayload(fr))
+                        this->outQueue.push(std::move(data));
         }
 };
 
