@@ -4,6 +4,7 @@
 #include <initializer_list>
 #include <mutex>
 #include <queue>
+
 namespace xqueue
 {
 
@@ -11,6 +12,10 @@ template <typename T> struct Queue
 {
         std::mutex    mutex;
         std::queue<T> queue;
+
+        Queue() : mutex(std::mutex()), queue(std::queue<T>()) {}
+
+        bool empty() { return this->queue.empty(); }
 
         void push(T&& t)
         {
