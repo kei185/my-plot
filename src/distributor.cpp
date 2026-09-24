@@ -22,7 +22,7 @@ void DeviceController::run(std::stop_token st)
 
 template <> std::string Plotter<frame::LidarPoint>::toString(frame::LidarPoint m)
 {
-        return std::format("{} {}", m.angle, m.dist);
+        return std::format("{} {}", m.dist, m.angle);
 }
 
 } // namespace distributor

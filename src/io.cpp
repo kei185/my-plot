@@ -45,6 +45,7 @@ Port::Port(std::string path)
         this->tty.c_cflag &= ~PARENB;
         // stop bit 1bit
         this->tty.c_cflag &= ~CSTOPB;
+        // キャリア検出とかしない
         this->tty.c_cflag &= ~CLOCAL;
         // 最低1文字読み出し
         tty.c_cc[VMIN] = 1;
@@ -106,28 +107,6 @@ std::expected<void, error::Error> Port::writeRaw(std::span<const uint8_t> bytes)
         //         return std::unexpected(error::Error::IO_WRITE_FAILED);
 
         return {};
-}
-
-/**
- * decodes bytes reading as  a little endian byte series
- * this is necessary for the reason below.
- *
- * B[1], B[2], B[3], B[4] are read in reverse way
- * for instance, these are read as blow when successive byte access:
- *      read((uint32_t)n, 4);
- * it gets [B[1],  B[2] , ..] as [4th byte, 3rd byte,...].
- * but we want to read as [B[4],  B[3] , ..].
- * so read it a byte basis here.
- */
-uint16_t decodeBigEndian(std::span<const uint8_t, 2> bytes)
-{
-        return (static_cast<uint16_t>(bytes[0]) << 8) | static_cast<uint16_t>(bytes[1]);
-}
-
-uint32_t decodeBigEndian(std::span<const uint8_t, 4> bytes)
-{
-        return (static_cast<uint32_t>(bytes[0]) << 24) | (static_cast<uint32_t>(bytes[1]) << 16) |
-               (static_cast<uint32_t>(bytes[2]) << 8) | static_cast<uint32_t>(bytes[3]);
 }
 
 } // namespace io

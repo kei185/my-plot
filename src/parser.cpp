@@ -1,11 +1,11 @@
 
 #include <cstdint>
-#include <span>
 #include <vector>
 
 #include "frame.hpp"
-#include "io.hpp"
 #include "parser.hpp"
+#include "utility/logger.hpp"
+#include "utility/toInt.hpp"
 
 namespace parser
 {
@@ -30,12 +30,8 @@ template <> std::vector<frame::LidarPoint> Parser<frame::LidarPoint>::parsePaylo
         for (size_t offset = 0; offset + frame::LIDAR_POINT_SIZE <= fr.payload.size();
              offset += frame::LIDAR_POINT_SIZE) {
 
-                const auto point = std::span<const uint8_t, frame::LIDAR_POINT_SIZE>(
-                        fr.payload.data() + offset,
-                        frame::LIDAR_POINT_SIZE);
-
-                angle_q6 = io::decodeBigEndian(point.first<2>());
-                dist     = io::decodeBigEndian(point.last<2>());
+                dist     = toInt16(fr.payload.data() + offset);
+                angle_q6 = toInt16(fr.payload.data() + offset + sizeof(uint16_t));
 
                 points.push_back(
                         {

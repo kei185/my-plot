@@ -25,7 +25,4 @@ struct Port
         std::expected<void, error::Error> writeRaw(std::span<const uint8_t>);
 };
 
-uint16_t decodeBigEndian(std::span<const uint8_t, 2>);
-uint32_t decodeBigEndian(std::span<const uint8_t, 4>);
-
 } // namespace io

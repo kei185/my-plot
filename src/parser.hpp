@@ -30,18 +30,16 @@ template <typename T> struct Parser : public ParserBase
 
 template <typename T> void Parser<T>::run(std::stop_token st)
 {
-        while (1) {
-                if (st.stop_requested())
-                        return;
-
+        while (!st.stop_requested()) {
                 if (this->inQueue.empty())
                         continue;
 
                 frame::Frame fr = this->inQueue.pop();
 
-                for (auto& data : Parser<T>::parsePayload(fr))
-                        this->outQueue.push(std::move(data));
+                this->outQueue.push_range(Parser<T>::parsePayload(fr));
         }
+
+        logger::log("thread requested stop");
 };
 
 } // namespace parser

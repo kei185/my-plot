@@ -1,9 +1,9 @@
 
 #pragma once
 
-#include <initializer_list>
 #include <mutex>
 #include <queue>
+#include <vector>
 
 namespace xqueue
 {
@@ -15,7 +15,16 @@ template <typename T> struct Queue
 
         Queue() : mutex(std::mutex()), queue(std::queue<T>()) {}
 
-        bool empty() { return this->queue.empty(); }
+        bool empty()
+        {
+                this->mutex.lock();
+
+                auto r = this->queue.empty();
+
+                this->mutex.unlock();
+
+                return r;
+        }
 
         void push(T&& t)
         {
@@ -26,7 +35,7 @@ template <typename T> struct Queue
                 this->mutex.unlock();
         }
 
-        void push_range(std::initializer_list<T> list)
+        void push_range(std::vector<T> list)
         {
                 this->mutex.lock();
 

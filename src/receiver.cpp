@@ -15,8 +15,9 @@
 #include "error.hpp"
 #include "frame.hpp"
 #include "io.hpp"
-#include "utility/unwrap.hpp"
 #include "xqueue.hpp"
+#include "utility/unwrap.hpp"
+#include "utility/toInt.hpp"
 
 using namespace error;
 
@@ -97,10 +98,9 @@ std::expected<frame::FrameHeader, Error> Receiver::getFrameHeader(io::Port& port
 
         // TODO: low priority fix hard code
         frame::FrameHeader frh = {
-                .length    = io::decodeBigEndian(std::span<const uint8_t, 2>(rawHeader.data(), 2)),
+                .length    = toInt16(rawHeader.data()),
                 .type      = static_cast<frame::Type>(rawHeader[frame::TYPE_OFFSET]),
-                .timestamp = io::decodeBigEndian(
-                        std::span<const uint8_t, 4>(rawHeader.data() + frame::TIMESTAMP_OFFSET, 4)),
+                .timestamp = toInt32(rawHeader.data() + frame::TIMESTAMP_OFFSET),
         };
 
         return frh;
