@@ -54,6 +54,7 @@ using ReceiverWorker    = Worker<receiver::Receiver, Error::RECEIVER_INIT_FAILED
 using ParserWorker      = Worker<parser::ParserBase, Error::PARSER_INIT_FAILED>;
 using DistributorWorker = Worker<distributor::Distributor, Error::DISTRIBUTOR_INIT_FAILED>;
 
+// TODO typeのmapにしたほうがいい
 struct DataStreams
 {
         std::unique_ptr<xqueue::Queue<frame::systemMessage>> system;

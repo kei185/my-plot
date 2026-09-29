@@ -146,6 +146,10 @@ std::expected<void, Error> Manager::initDistributors(
         distributors[type].instance =
                 std::make_unique<distributor::Plotter<frame::LidarPoint>>(type, *streams.lidar);
 
+        type = frame::Type::IMU;
+        distributors[type].instance =
+                std::make_unique<distributor::Plotter<frame::Imu>>(type, *streams.imu);
+
         // TODO 追加する
 
         return {};
