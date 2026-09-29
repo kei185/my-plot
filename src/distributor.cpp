@@ -5,6 +5,7 @@
 #include "xqueue.hpp"
 #include "utility/logger.hpp"
 
+#include <cstdio>
 #include <format>
 #include <stop_token>
 
@@ -97,6 +98,45 @@ template <> void Plotter<frame::LidarPoint>::run(std::stop_token st)
 
 template <> std::string Plotter<frame::Imu>::toString(frame::Imu m) { return ""; }
 
-template <> void Plotter<frame::Imu>::run(std::stop_token st) {}
+template <> void Plotter<frame::Imu>::run(std::stop_token st)
+{
+        if (st.stop_requested())
+                return;
+
+        FILE* file = popen("gnuplot -persist", "w");
+
+        if (file == nullptr) {
+                logger::log("OPEN PROCESS gnuplot FAILED");
+                return;
+        }
+
+        std::fputs(
+                "set title 'IMU plane'\n"
+                "set xlabel 'X'\n"
+                "set ylabel 'Y'\n"
+                "set zlabel 'Z'\n"
+                "set xrange [-1.5:1.5]\n"
+                "set yrange [-1.5:1.5]\n"
+                "set zrange [-1.5:1.5]\n"
+                "set cbrange [-1:1]\n"
+                "set view 60, 30\n"
+                "set view equal xyz\n"
+                "set xyplane at 0\n"
+                "unset key\n"
+                "unset colorbox\n"
+                "set pm3d depthorder border linecolor rgb '#00749A'\n"
+                "splot '-' using 1:2:3 with pm3d fillcolor rgb '#00AEEF'\n"
+                "-1 -1 0\n"
+                "1 -1 0\n"
+                "\n"
+                "-1 1 0\n"
+                "1 1 0\n"
+                "e\n",
+                file);
+        std::fflush(file);
+
+        std::fputs("exit\n", file);
+        pclose(file);
+}
 
 } // namespace distributor
