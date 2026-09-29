@@ -169,6 +169,7 @@ template <> void Plotter<frame::Imu>::run(std::stop_token st)
 
         std::fputs(
                 "set xlabel 'Elapsed time [s]'\n"
+                "set format x '%.2f'\n"
                 "set ylabel 'Raw value'\n"
                 "set grid\n"
                 "set key outside right\n"
