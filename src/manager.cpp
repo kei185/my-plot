@@ -22,7 +22,8 @@ namespace manager
 {
 DataStreams::DataStreams()
     : system(std::make_unique<xqueue::Queue<frame::systemMessage>>()),
-      lidar(std::make_unique<xqueue::Queue<frame::LidarPoint>>())
+      lidar(std::make_unique<xqueue::Queue<frame::LidarPoint>>()),
+      imu(std::make_unique<xqueue::Queue<frame::Imu>>())
 {}
 
 // TODO: low priority constructor injection　のほうがわかりやすいかも
