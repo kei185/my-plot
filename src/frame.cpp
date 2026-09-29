@@ -14,8 +14,8 @@ const uint8_t           START_OF_FRAME[]  = {0xAA, 0x55};
 const std::vector<Type> TYPES             = {
         Type::SYSTEM,
         Type::LIDAR,
+        Type::IMU,
         // TODO
-        // Type::IMU,
         // Type::ENCODER
 };
 

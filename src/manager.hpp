@@ -58,6 +58,7 @@ struct DataStreams
 {
         std::unique_ptr<xqueue::Queue<frame::systemMessage>> system;
         std::unique_ptr<xqueue::Queue<frame::LidarPoint>>    lidar;
+        std::unique_ptr<xqueue::Queue<frame::Imu>>           imu;
         DataStreams();
 };
 

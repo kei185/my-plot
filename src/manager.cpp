@@ -115,6 +115,12 @@ std::expected<void, Error> Manager::initParsers(
                 frameStreams[type],
                 *streams.lidar);
 
+        type                   = frame::Type::IMU;
+        parsers[type].instance = std::make_unique<parser::Parser<frame::Imu>>(
+                type,
+                frameStreams[type],
+                *streams.imu);
+
         // TODO 追加する
 
         return {};

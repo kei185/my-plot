@@ -107,8 +107,8 @@ constexpr Type frameQueueMUX(Type type)
 {
         switch (type) {
                 case Type::LIDAR:
+                case Type::IMU:
                         // TODO
-                        // case Type::IMU:
                         // case Type::ENCODER:
                         return type;
 
@@ -156,6 +156,20 @@ struct LidarPoint
         float    angle;
 };
 constexpr size_t LIDAR_POINT_SIZE = 2 + 2;
+
+struct Acceleration
+{
+        uint16_t x; // roll
+        uint16_t y; // pitch
+        uint16_t z; // yaw
+};
+constexpr size_t IMU_ACCEL_VALUE_SIZE = 2;
+
+struct Imu
+{
+        Acceleration rot;
+        Acceleration trans;
+};
 
 struct systemMessage
 {

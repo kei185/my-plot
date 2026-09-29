@@ -4,7 +4,6 @@
 
 #include "frame.hpp"
 #include "parser.hpp"
-#include "utility/logger.hpp"
 #include "utility/toInt.hpp"
 
 namespace parser
@@ -41,6 +40,23 @@ template <> std::vector<frame::LidarPoint> Parser<frame::LidarPoint>::parsePaylo
         }
 
         return points;
+}
+
+template <> std::vector<frame::Imu> Parser<frame::Imu>::parsePayload(frame::Frame& fr)
+{
+        uint8_t* head = fr.payload.data();
+
+        return {(frame::Imu){.rot =
+                                     {
+                                             .x = toInt16(head),
+                                             .y = toInt16(head += frame::IMU_ACCEL_VALUE_SIZE),
+                                             .z = toInt16(head += frame::IMU_ACCEL_VALUE_SIZE),
+                                     },
+                             .trans = {
+                                     .x = toInt16(head += frame::IMU_ACCEL_VALUE_SIZE),
+                                     .y = toInt16(head += frame::IMU_ACCEL_VALUE_SIZE),
+                                     .z = toInt16(head += frame::IMU_ACCEL_VALUE_SIZE),
+                             }}};
 }
 
 } // namespace parser
