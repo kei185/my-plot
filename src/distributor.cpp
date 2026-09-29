@@ -5,9 +5,13 @@
 #include "xqueue.hpp"
 #include "utility/logger.hpp"
 
+#include <algorithm>
+#include <chrono>
 #include <cstdio>
+#include <deque>
 #include <format>
 #include <stop_token>
+#include <thread>
 
 namespace distributor
 {
@@ -96,8 +100,19 @@ template <> void Plotter<frame::LidarPoint>::run(std::stop_token st)
  * IMU
  */
 
-template <> std::string Plotter<frame::Imu>::toString(frame::Imu m) { return ""; }
+template <> std::string Plotter<frame::Imu>::toString(frame::Imu m)
+{
+        return std::format(
+                "{} {} {} {} {} {}",
+                m.trans.x,
+                m.trans.y,
+                m.trans.z,
+                m.rot.x,
+                m.rot.y,
+                m.rot.z);
+}
 
+/* Static 3D plane, kept for later rotation support.
 template <> void Plotter<frame::Imu>::run(std::stop_token st)
 {
         if (st.stop_requested())
@@ -134,6 +149,119 @@ template <> void Plotter<frame::Imu>::run(std::stop_token st)
                 "e\n",
                 file);
         std::fflush(file);
+
+        std::fputs("exit\n", file);
+        pclose(file);
+}
+*/
+
+template <> void Plotter<frame::Imu>::run(std::stop_token st)
+{
+        if (st.stop_requested())
+                return;
+
+        FILE* file = popen("gnuplot -persist", "w");
+
+        if (file == nullptr) {
+                logger::log("OPEN PROCESS gnuplot FAILED");
+                return;
+        }
+
+        std::fputs(
+                "set xlabel 'Elapsed time [s]'\n"
+                "set ylabel 'Raw value'\n"
+                "set grid\n"
+                "set key outside right\n"
+                "set lmargin 10\n"
+                "set rmargin 12\n"
+                "set style data linespoints\n"
+                "set style line 1 linecolor rgb '#00AEEF' linewidth 1.5 pointtype 7 pointsize 0.3\n"
+                "set style line 2 linecolor rgb '#F28E2B' linewidth 1.5 pointtype 7 pointsize 0.3\n"
+                "set style line 3 linecolor rgb '#59A14F' linewidth 1.5 pointtype 7 pointsize "
+                "0.3\n",
+                file);
+
+        constexpr size_t MAX_POINTS      = 1000;
+        constexpr auto   REDRAW_INTERVAL = std::chrono::milliseconds(50);
+
+        struct Sample
+        {
+                double     time;
+                frame::Imu value;
+        };
+
+        std::deque<Sample> points;
+        const auto         start      = std::chrono::steady_clock::now();
+        auto               nextRedraw = start;
+        bool               dirty      = false;
+
+        while (!st.stop_requested()) {
+                if (!this->inQueue.empty()) {
+                        auto value = this->inQueue.pop();
+                        // Imu has no device timestamp; use elapsed host time when dequeued.
+                        const double time = std::chrono::duration<double>(
+                                                    std::chrono::steady_clock::now() - start)
+                                                    .count();
+                        points.push_back({time, value});
+                        if (points.size() > MAX_POINTS)
+                                points.pop_front();
+                        dirty = true;
+                } else {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                }
+
+                const auto now = std::chrono::steady_clock::now();
+                if (!dirty || now < nextRedraw)
+                        continue;
+
+                auto transMin = points.front().value.trans.x;
+                auto transMax = transMin;
+                auto rotMin   = points.front().value.rot.x;
+                auto rotMax   = rotMin;
+
+                std::fputs("$imu << EOD\n", file);
+                for (const auto& point : points) {
+                        const auto& t = point.value.trans;
+                        const auto& r = point.value.rot;
+                        transMin      = std::min({transMin, t.x, t.y, t.z});
+                        transMax      = std::max({transMax, t.x, t.y, t.z});
+                        rotMin        = std::min({rotMin, r.x, r.y, r.z});
+                        rotMax        = std::max({rotMax, r.x, r.y, r.z});
+                        std::fprintf(file, "%.6f %s\n", point.time, toString(point.value).c_str());
+                }
+                std::fputs("EOD\n", file);
+
+                // Keep flat signals visible and avoid an empty range, including all-zero data.
+                const double transPadding = std::max(1.0, (transMax - transMin) * 0.05);
+                const double rotPadding   = std::max(1.0, (rotMax - rotMin) * 0.05);
+                std::fprintf(
+                        file,
+                        "set xrange [%.6f:%.6f]\n",
+                        points.front().time,
+                        std::max(points.back().time, points.front().time + 0.05));
+                std::fprintf(
+                        file,
+                        "set multiplot layout 2,1 title 'IMU time series'\n"
+                        "set title 'Translation'\n"
+                        "set yrange [%f:%f]\n"
+                        "plot $imu using 1:2 title 'X' linestyle 1, "
+                        "$imu using 1:3 title 'Y' linestyle 2, "
+                        "$imu using 1:4 title 'Z' linestyle 3\n"
+                        "set title 'Rotation'\n"
+                        "set yrange [%f:%f]\n"
+                        "plot $imu using 1:5 title 'X' linestyle 1, "
+                        "$imu using 1:6 title 'Y' linestyle 2, "
+                        "$imu using 1:7 title 'Z' linestyle 3\n"
+                        "unset multiplot\n",
+                        transMin - transPadding,
+                        transMax + transPadding,
+                        rotMin - rotPadding,
+                        rotMax + rotPadding);
+                std::fflush(file);
+
+                dirty      = false;
+                nextRedraw = now + REDRAW_INTERVAL;
+        }
 
         std::fputs("exit\n", file);
         pclose(file);
