@@ -168,18 +168,25 @@ template <> void Plotter<frame::Imu>::run(std::stop_token st)
         }
 
         std::fputs(
+                "set title 'IMU time series'\n"
                 "set xlabel 'Elapsed time [s]'\n"
                 "set format x '%.2f'\n"
-                "set ylabel 'Raw value'\n"
+                "set ylabel 'Translation raw value'\n"
+                "set y2label 'Rotation raw value'\n"
+                "set ytics nomirror\n"
+                "set y2tics\n"
                 "set grid\n"
-                "set key outside right\n"
+                "set key outside top center horizontal maxrows 2\n"
                 "set lmargin 10\n"
-                "set rmargin 12\n"
+                "set rmargin 10\n"
                 "set style data linespoints\n"
                 "set style line 1 linecolor rgb '#00AEEF' linewidth 1.5 pointtype 7 pointsize 0.3\n"
                 "set style line 2 linecolor rgb '#F28E2B' linewidth 1.5 pointtype 7 pointsize 0.3\n"
                 "set style line 3 linecolor rgb '#59A14F' linewidth 1.5 pointtype 7 pointsize "
-                "0.3\n",
+                "0.3\n"
+                "set style line 4 linecolor rgb '#00AEEF' linewidth 1.5 dashtype 2\n"
+                "set style line 5 linecolor rgb '#F28E2B' linewidth 1.5 dashtype 2\n"
+                "set style line 6 linecolor rgb '#59A14F' linewidth 1.5 dashtype 2\n",
                 file);
 
         constexpr size_t MAX_POINTS      = 1000;
@@ -242,18 +249,17 @@ template <> void Plotter<frame::Imu>::run(std::stop_token st)
                         std::max(points.back().time, points.front().time + 0.05));
                 std::fprintf(
                         file,
-                        "set multiplot layout 2,1 title 'IMU time series'\n"
-                        "set title 'Translation'\n"
                         "set yrange [%f:%f]\n"
-                        "plot $imu using 1:2 title 'X' linestyle 1, "
-                        "$imu using 1:3 title 'Y' linestyle 2, "
-                        "$imu using 1:4 title 'Z' linestyle 3\n"
-                        "set title 'Rotation'\n"
-                        "set yrange [%f:%f]\n"
-                        "plot $imu using 1:5 title 'X' linestyle 1, "
-                        "$imu using 1:6 title 'Y' linestyle 2, "
-                        "$imu using 1:7 title 'Z' linestyle 3\n"
-                        "unset multiplot\n",
+                        "set y2range [%f:%f]\n"
+                        // The Qt terminal draws multiplot panels one at a time, which exposes
+                        // a blank canvas during live redraws. Two Y axes keep both scales in
+                        // one plot so each update is presented as a single frame.
+                        "plot $imu using 1:2 axes x1y1 title 'Translation X' linestyle 1, "
+                        "$imu using 1:3 axes x1y1 title 'Translation Y' linestyle 2, "
+                        "$imu using 1:4 axes x1y1 title 'Translation Z' linestyle 3, "
+                        "$imu using 1:5 axes x1y2 title 'Rotation X' linestyle 4, "
+                        "$imu using 1:6 axes x1y2 title 'Rotation Y' linestyle 5, "
+                        "$imu using 1:7 axes x1y2 title 'Rotation Z' linestyle 6\n",
                         transMin - transPadding,
                         transMax + transPadding,
                         rotMin - rotPadding,
