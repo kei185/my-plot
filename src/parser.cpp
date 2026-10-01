@@ -46,17 +46,18 @@ template <> std::vector<frame::Imu> Parser<frame::Imu>::parsePayload(frame::Fram
 {
         uint8_t* head = fr.payload.data();
 
-        return {(frame::Imu){.rot =
-                                     {
-                                             .x = toInt16(head),
-                                             .y = toInt16(head += frame::IMU_ACCEL_VALUE_SIZE),
-                                             .z = toInt16(head += frame::IMU_ACCEL_VALUE_SIZE),
-                                     },
-                             .trans = {
-                                     .x = toInt16(head += frame::IMU_ACCEL_VALUE_SIZE),
-                                     .y = toInt16(head += frame::IMU_ACCEL_VALUE_SIZE),
-                                     .z = toInt16(head += frame::IMU_ACCEL_VALUE_SIZE),
-                             }}};
+        return {(frame::Imu){
+                .rot =
+                        {
+                                .x = toSignedInt16(head),
+                                .y = toSignedInt16(head += frame::IMU_ACCEL_VALUE_SIZE),
+                                .z = toSignedInt16(head += frame::IMU_ACCEL_VALUE_SIZE),
+                        },
+                .trans = {
+                        .x = toSignedInt16(head += frame::IMU_ACCEL_VALUE_SIZE),
+                        .y = toSignedInt16(head += frame::IMU_ACCEL_VALUE_SIZE),
+                        .z = toSignedInt16(head += frame::IMU_ACCEL_VALUE_SIZE),
+                }}};
 }
 
 } // namespace parser

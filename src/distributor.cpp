@@ -6,10 +6,13 @@
 #include "utility/logger.hpp"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <deque>
 #include <format>
+#include <numbers>
 #include <stop_token>
 #include <thread>
 
@@ -112,48 +115,150 @@ template <> std::string Plotter<frame::Imu>::toString(frame::Imu m)
                 m.rot.z);
 }
 
-/* Static 3D plane, kept for later rotation support.
-template <> void Plotter<frame::Imu>::run(std::stop_token st)
+namespace
 {
-        if (st.stop_requested())
-                return;
+constexpr double IMU_SAMPLE_RATE_HZ = 15.0;
+// The sensor firmware leaves CTRL6 at its reset default: +/-125 dps.
+constexpr double GYRO_SENSITIVITY_DPS_PER_LSB = 4.375 / 1000.0;
+// Use accelerometer tilt as a small correction to limit integrated gyro drift.
+constexpr double ACCELEROMETER_CORRECTION    = 0.02;
+constexpr double PLANE_HALF_LENGTH           = 1.2;
+constexpr double PLANE_HALF_WIDTH            = 0.8;
+constexpr double PLANE_FORWARD_MARKER_LENGTH = 1.5;
+constexpr double DEGREES_PER_RADIAN          = 180.0 / std::numbers::pi;
 
-        FILE* file = popen("gnuplot -persist", "w");
+struct Orientation
+{
+        double roll            = 0.0;
+        double pitch           = 0.0;
+        double yaw             = 0.0;
+        bool   tiltInitialized = false;
+};
 
-        if (file == nullptr) {
-                logger::log("OPEN PROCESS gnuplot FAILED");
+struct Point3d
+{
+        double x;
+        double y;
+        double z;
+};
+
+double wrapDegrees(double angle) { return std::remainder(angle, 360.0); }
+
+double blendAngle(double predicted, double measured)
+{
+        const double difference = std::remainder(measured - predicted, 360.0);
+        return wrapDegrees(predicted + ACCELEROMETER_CORRECTION * difference);
+}
+
+void updateOrientation(Orientation& orientation, const frame::Imu& sample)
+{
+        constexpr double samplePeriod = 1.0 / IMU_SAMPLE_RATE_HZ;
+        const double     gyroStep     = GYRO_SENSITIVITY_DPS_PER_LSB * samplePeriod;
+
+        const double predictedRoll  = orientation.roll + sample.rot.x * gyroStep;
+        const double predictedPitch = orientation.pitch + sample.rot.y * gyroStep;
+        orientation.yaw             = wrapDegrees(orientation.yaw + sample.rot.z * gyroStep);
+
+        const double ax             = sample.trans.x;
+        const double ay             = sample.trans.y;
+        const double az             = sample.trans.z;
+        const double verticalLength = std::hypot(ay, az);
+        const double totalLength    = std::hypot(ax, verticalLength);
+
+        if (totalLength <= 1.0) {
+                orientation.roll  = wrapDegrees(predictedRoll);
+                orientation.pitch = wrapDegrees(predictedPitch);
                 return;
         }
 
+        const double measuredRoll  = std::atan2(ay, az) * DEGREES_PER_RADIAN;
+        const double measuredPitch = std::atan2(-ax, verticalLength) * DEGREES_PER_RADIAN;
+
+        if (!orientation.tiltInitialized) {
+                orientation.roll            = measuredRoll;
+                orientation.pitch           = measuredPitch;
+                orientation.tiltInitialized = true;
+                return;
+        }
+
+        orientation.roll  = blendAngle(predictedRoll, measuredRoll);
+        orientation.pitch = blendAngle(predictedPitch, measuredPitch);
+}
+
+Point3d rotate(Point3d point, const Orientation& orientation)
+{
+        const double roll  = orientation.roll / DEGREES_PER_RADIAN;
+        const double pitch = orientation.pitch / DEGREES_PER_RADIAN;
+        const double yaw   = orientation.yaw / DEGREES_PER_RADIAN;
+
+        const double cr = std::cos(roll);
+        const double sr = std::sin(roll);
+        const double cp = std::cos(pitch);
+        const double sp = std::sin(pitch);
+        const double cy = std::cos(yaw);
+        const double sy = std::sin(yaw);
+
+        return {
+                .x = cy * cp * point.x + (cy * sp * sr - sy * cr) * point.y +
+                     (cy * sp * cr + sy * sr) * point.z,
+                .y = sy * cp * point.x + (sy * sp * sr + cy * cr) * point.y +
+                     (sy * sp * cr - cy * sr) * point.z,
+                .z = -sp * point.x + cp * sr * point.y + cp * cr * point.z,
+        };
+}
+
+void configureOrientationPlot(FILE* file)
+{
         std::fputs(
-                "set title 'IMU plane'\n"
+                "set title 'IMU orientation'\n"
                 "set xlabel 'X'\n"
                 "set ylabel 'Y'\n"
                 "set zlabel 'Z'\n"
-                "set xrange [-1.5:1.5]\n"
-                "set yrange [-1.5:1.5]\n"
-                "set zrange [-1.5:1.5]\n"
-                "set cbrange [-1:1]\n"
+                "set xrange [-1.7:1.7]\n"
+                "set yrange [-1.7:1.7]\n"
+                "set zrange [-1.7:1.7]\n"
                 "set view 60, 30\n"
                 "set view equal xyz\n"
                 "set xyplane at 0\n"
+                "set grid\n"
                 "unset key\n"
                 "unset colorbox\n"
-                "set pm3d depthorder border linecolor rgb '#00749A'\n"
-                "splot '-' using 1:2:3 with pm3d fillcolor rgb '#00AEEF'\n"
-                "-1 -1 0\n"
-                "1 -1 0\n"
-                "\n"
-                "-1 1 0\n"
-                "1 1 0\n"
-                "e\n",
+                "set pm3d depthorder border linecolor rgb '#00749A'\n",
                 file);
         std::fflush(file);
-
-        std::fputs("exit\n", file);
-        pclose(file);
 }
-*/
+
+void drawOrientation(FILE* file, const Orientation& orientation)
+{
+        const std::array<Point3d, 4> plane = {
+                rotate({-PLANE_HALF_LENGTH, -PLANE_HALF_WIDTH, 0.0}, orientation),
+                rotate({PLANE_HALF_LENGTH, -PLANE_HALF_WIDTH, 0.0}, orientation),
+                rotate({-PLANE_HALF_LENGTH, PLANE_HALF_WIDTH, 0.0}, orientation),
+                rotate({PLANE_HALF_LENGTH, PLANE_HALF_WIDTH, 0.0}, orientation),
+        };
+        const Point3d forward = rotate({PLANE_FORWARD_MARKER_LENGTH, 0.0, 0.0}, orientation);
+
+        std::fputs("$plane << EOD\n", file);
+        for (size_t row = 0; row < 2; ++row) {
+                for (size_t column = 0; column < 2; ++column) {
+                        const auto& point = plane[row * 2 + column];
+                        std::fprintf(file, "%f %f %f\n", point.x, point.y, point.z);
+                }
+                std::fputc('\n', file);
+        }
+        std::fputs("EOD\n$forward << EOD\n0 0 0\n", file);
+        std::fprintf(file, "%f %f %f\nEOD\n", forward.x, forward.y, forward.z);
+        std::fprintf(
+                file,
+                "set title 'IMU orientation: roll %.1f, pitch %.1f, yaw %.1f deg'\n"
+                "splot $plane using 1:2:3 with pm3d fillcolor rgb '#00AEEF', "
+                "$forward using 1:2:3 with lines linewidth 4 linecolor rgb '#F28E2B'\n",
+                orientation.roll,
+                orientation.pitch,
+                orientation.yaw);
+        std::fflush(file);
+}
+} // namespace
 
 template <> void Plotter<frame::Imu>::run(std::stop_token st)
 {
@@ -166,6 +271,16 @@ template <> void Plotter<frame::Imu>::run(std::stop_token st)
                 logger::log("OPEN PROCESS gnuplot FAILED");
                 return;
         }
+
+        FILE* orientationFile = popen("gnuplot -persist", "w");
+        if (orientationFile == nullptr) {
+                logger::log("OPEN PROCESS gnuplot FAILED");
+                std::fputs("exit\n", file);
+                pclose(file);
+                return;
+        }
+
+        configureOrientationPlot(orientationFile);
 
         std::fputs(
                 "set title 'IMU time series'\n"
@@ -202,10 +317,13 @@ template <> void Plotter<frame::Imu>::run(std::stop_token st)
         const auto         start      = std::chrono::steady_clock::now();
         auto               nextRedraw = start;
         bool               dirty      = false;
+        Orientation        orientation;
 
         while (!st.stop_requested()) {
                 if (!this->inQueue.empty()) {
                         auto value = this->inQueue.pop();
+                        updateOrientation(orientation, value);
+                        drawOrientation(orientationFile, orientation);
                         // Imu has no device timestamp; use elapsed host time when dequeued.
                         const double time = std::chrono::duration<double>(
                                                     std::chrono::steady_clock::now() - start)
@@ -271,7 +389,9 @@ template <> void Plotter<frame::Imu>::run(std::stop_token st)
         }
 
         std::fputs("exit\n", file);
+        std::fputs("exit\n", orientationFile);
         pclose(file);
+        pclose(orientationFile);
 }
 
 } // namespace distributor
