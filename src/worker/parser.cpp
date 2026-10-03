@@ -1,10 +1,10 @@
+#include "worker/parser.hpp"
+
+#include "core/frame.hpp"
+#include "utility/toInt.hpp"
 
 #include <cstdint>
 #include <vector>
-
-#include "core/frame.hpp"
-#include "worker/parser.hpp"
-#include "utility/toInt.hpp"
 
 namespace parser
 {

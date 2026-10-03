@@ -1,10 +1,11 @@
 #pragma once
-#include <stop_token>
-#include <vector>
 
 #include "core/frame.hpp"
-#include "utility/logger.hpp"
 #include "core/xqueue.hpp"
+#include "utility/logger.hpp"
+
+#include <stop_token>
+#include <vector>
 
 namespace parser
 {

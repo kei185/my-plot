@@ -1,7 +1,7 @@
-
-#include "demo/gnuplot.hpp"
 #include "worker/distributor.hpp"
-#include "protocol.hpp"
+
+#include "core/protocol.hpp"
+#include "demo/gnuplot.hpp"
 
 #include <stop_token>
 

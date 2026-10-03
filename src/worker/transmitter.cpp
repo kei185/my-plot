@@ -1,8 +1,10 @@
 #include "worker/transmitter.hpp"
+
 #include "core/frame.hpp"
 #include "core/io.hpp"
-#include "utility/logger.hpp"
 #include "core/xqueue.hpp"
+#include "utility/logger.hpp"
+
 #include <chrono>
 #include <format>
 #include <span>

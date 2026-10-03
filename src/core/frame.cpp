@@ -1,9 +1,11 @@
+#include "core/frame.hpp"
+
 #include <array>
-#include <stdint.h>
 #include <cstddef>
 #include <cstdint>
+
+#include <stdint.h>
 #include <sys/types.h>
-#include "core/frame.hpp"
 
 namespace frame
 {
