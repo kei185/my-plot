@@ -4,7 +4,6 @@
 #include "xqueue.hpp"
 
 #include <stop_token>
-#include <string>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -39,8 +38,7 @@ template <typename T> struct Plotter : Distributor
         Plotter(frame::Type type, xqueue::Queue<T>& inQueue) : type(type), inQueue(inQueue) {}
         ~Plotter() {}
 
-        void               run(std::stop_token) override;
-        static std::string toString(T);
+        void run(std::stop_token) override;
 };
 
 } // namespace distributor
