@@ -1,13 +1,16 @@
 
 #pragma once
 
+#include "utility/error.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <expected>
 #include <span>
-#include <termios.h>
 #include <string>
-#include "utility/error.hpp"
+
+#include <termios.h>
+
 namespace io
 {
 

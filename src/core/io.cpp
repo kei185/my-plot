@@ -1,3 +1,6 @@
+#include "core/io.hpp"
+#include "utility/logger.hpp"
+
 #include <cerrno>
 #include <cstddef>
 #include <cstdint>
@@ -5,12 +8,11 @@
 #include <cstdlib>
 #include <format>
 #include <span>
-#include <unistd.h>
 #include <string>
-#include <termios.h>
+
 #include <fcntl.h>
-#include "core/io.hpp"
-#include "utility/logger.hpp"
+#include <termios.h>
+#include <unistd.h>
 
 namespace io
 {

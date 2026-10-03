@@ -1,9 +1,11 @@
 #pragma once
+
 #include "core/frame.hpp"
-#include "worker/transmitter.hpp"
 #include "core/xqueue.hpp"
+#include "worker/transmitter.hpp"
 
 #include <stop_token>
+
 #include <fcntl.h>
 #include <unistd.h>
 

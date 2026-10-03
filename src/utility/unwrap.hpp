@@ -1,7 +1,7 @@
 #pragma once
 
 #include "utility/error.hpp"
-#include "logger.hpp"
+#include "utility/logger.hpp"
 
 #include <cstdlib>
 #include <expected>

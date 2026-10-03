@@ -1,7 +1,9 @@
 #include "manager.hpp"
 #include "utility/logger.hpp"
+
 #include <format>
 #include <print>
+
 #include <fcntl.h>
 #include <unistd.h>
 
