@@ -1,7 +1,14 @@
 FORMAT_FILE := $(shell find src -name "*.cpp" -or -name "*.hpp" -type f)
-PORT:=$(shell ls /dev/cu.usb* )
 
-.PHONY:init  debug build clean
+KERNEL := $(shell uname)
+ifeq ($(KERNEL), Darwin)
+	PORT:=$(shell ls /dev/cu.usb* )
+endif
+ifeq ($(KERNEL), Linux)
+	PORT:=$(shell ls /dev/ttyACM* )
+endif
+
+.PHONY:init debug build clean
 
 init:
 	cmake -S . -B build
