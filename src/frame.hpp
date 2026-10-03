@@ -159,9 +159,9 @@ constexpr size_t LIDAR_POINT_SIZE = 2 + 2;
 
 struct Acceleration
 {
-        uint16_t x; // roll
-        uint16_t y; // pitch
-        uint16_t z; // yaw
+        int16_t x;
+        int16_t y;
+        int16_t z;
 };
 constexpr size_t IMU_ACCEL_VALUE_SIZE = 2;
 

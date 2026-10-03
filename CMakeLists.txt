@@ -8,7 +8,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-Wall -g -O0")
 
 project(myplot LANGUAGES CXX)
 
-file(GLOB MAIN src/*.cpp)
+file(GLOB MAIN src/*.cpp src/demo/*.cpp)
 # file(GLOB MAIN src/main.cpp)
 find_package(Boost REQUIRED COMPONENTS crc)
 add_executable(main ${MAIN})
