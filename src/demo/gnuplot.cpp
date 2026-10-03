@@ -185,7 +185,7 @@ void drawOrientation(FILE* file, const Orientation& orientation)
         std::fflush(file);
 }
 
-void configureImuPlot(FILE* file)
+void configureImuTimeSeriesPlot(FILE* file)
 {
         std::fputs(
                 "set title 'IMU time series'\n"
@@ -261,7 +261,7 @@ void run(std::stop_token st, xqueue::Queue<frame::LidarPoint>& inQueue)
         pclose(file);
 }
 
-void run(std::stop_token st, xqueue::Queue<frame::Imu>& inQueue)
+void runImuTimeSeries(std::stop_token st, xqueue::Queue<frame::Imu>& inQueue)
 {
         if (st.stop_requested())
                 return;
@@ -273,28 +273,16 @@ void run(std::stop_token st, xqueue::Queue<frame::Imu>& inQueue)
                 return;
         }
 
-        FILE* orientationFile = popen("gnuplot -persist", "w");
-        if (orientationFile == nullptr) {
-                logger::log("OPEN PROCESS gnuplot FAILED");
-                std::fputs("exit\n", file);
-                pclose(file);
-                return;
-        }
-
-        configureOrientationPlot(orientationFile);
-        configureImuPlot(file);
+        configureImuTimeSeriesPlot(file);
 
         std::deque<ImuSample> points;
         const auto            start      = std::chrono::steady_clock::now();
         auto                  nextRedraw = start;
         bool                  dirty      = false;
-        Orientation           orientation;
 
         while (!st.stop_requested()) {
                 if (!inQueue.empty()) {
                         auto value = inQueue.pop();
-                        updateOrientation(orientation, value);
-                        drawOrientation(orientationFile, orientation);
                         // Imu has no device timestamp; use elapsed host time when dequeued.
                         const double time = std::chrono::duration<double>(
                                                     std::chrono::steady_clock::now() - start)
@@ -360,9 +348,38 @@ void run(std::stop_token st, xqueue::Queue<frame::Imu>& inQueue)
         }
 
         std::fputs("exit\n", file);
-        std::fputs("exit\n", orientationFile);
         pclose(file);
-        pclose(orientationFile);
+}
+
+void runImuOrientation(std::stop_token st, xqueue::Queue<frame::Imu>& inQueue)
+{
+        if (st.stop_requested())
+                return;
+
+        FILE* file = popen("gnuplot -persist", "w");
+
+        if (file == nullptr) {
+                logger::log("OPEN PROCESS gnuplot FAILED");
+                return;
+        }
+
+        configureOrientationPlot(file);
+
+        Orientation orientation;
+
+        while (!st.stop_requested()) {
+                if (inQueue.empty()) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                        continue;
+                }
+
+                auto value = inQueue.pop();
+                updateOrientation(orientation, value);
+                drawOrientation(file, orientation);
+        }
+
+        std::fputs("exit\n", file);
+        pclose(file);
 }
 
 } // namespace demo
