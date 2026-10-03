@@ -1,6 +1,6 @@
 
 #include "plot.hpp"
-#include "xqueue.hpp"
+#include "core/xqueue.hpp"
 #include <cmath>
 #include <format>
 #include <string>

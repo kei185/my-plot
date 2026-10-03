@@ -4,17 +4,17 @@
 #include <unistd.h>
 #include <map>
 
-#include "distributor.hpp"
-#include "error.hpp"
-#include "parser.hpp"
-#include "frame.hpp"
-#include "receiver.hpp"
-#include "transmitter.hpp"
-#include "io.hpp"
+#include "worker/distributor.hpp"
+#include "utility/error.hpp"
+#include "worker/parser.hpp"
+#include "core/frame.hpp"
+#include "worker/receiver.hpp"
+#include "worker/transmitter.hpp"
+#include "core/io.hpp"
 #include "utility/logger.hpp"
 #include "utility/unwrap.hpp"
 #include "manager.hpp"
-#include "xqueue.hpp"
+#include "core/xqueue.hpp"
 
 using namespace error;
 

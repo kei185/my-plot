@@ -2,8 +2,8 @@
 #include <cstdint>
 #include <vector>
 
-#include "frame.hpp"
-#include "parser.hpp"
+#include "core/frame.hpp"
+#include "worker/parser.hpp"
 #include "utility/toInt.hpp"
 
 namespace parser

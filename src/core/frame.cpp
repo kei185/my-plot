@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <sys/types.h>
-#include "frame.hpp"
+#include "core/frame.hpp"
 
 namespace frame
 {

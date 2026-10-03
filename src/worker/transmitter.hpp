@@ -1,7 +1,7 @@
 #pragma once
-#include "frame.hpp"
-#include "io.hpp"
-#include "xqueue.hpp"
+#include "core/frame.hpp"
+#include "core/io.hpp"
+#include "core/xqueue.hpp"
 #include <expected>
 #include <stop_token>
 

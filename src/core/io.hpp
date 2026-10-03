@@ -7,7 +7,7 @@
 #include <span>
 #include <termios.h>
 #include <string>
-#include "error.hpp"
+#include "utility/error.hpp"
 namespace io
 {
 

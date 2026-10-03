@@ -4,12 +4,12 @@
 #include <stop_token>
 #include <string>
 #include <iostream>
-#include "frame.hpp"
+#include "core/frame.hpp"
 #include "utility/logger.hpp"
 #include "utility/unwrap.hpp"
-#include "transmitter.hpp"
+#include "worker/transmitter.hpp"
 #include "protocol.hpp"
-#include "xqueue.hpp"
+#include "core/xqueue.hpp"
 
 namespace protocol
 {
