@@ -36,6 +36,9 @@ template <> void Plotter<frame::LidarPoint>::run(std::stop_token st)
  * IMU
  */
 
-template <> void Plotter<frame::Imu>::run(std::stop_token st) { demo::run(st, this->inQueue); }
+template <> void Plotter<frame::Imu>::run(std::stop_token st)
+{
+        demo::runImuOrientation(st, this->inQueue);
+}
 
 } // namespace distributor
