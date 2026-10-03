@@ -1,3 +1,4 @@
+// @generated
 #include "demo/gnuplot.hpp"
 #include "utility/logger.hpp"
 
