@@ -1,4 +1,4 @@
-design: -
+design: -  
 coding: ai-assisted  
 docs: ai-generated
 
