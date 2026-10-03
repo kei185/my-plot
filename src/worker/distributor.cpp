@@ -1,6 +1,6 @@
 
 #include "demo/gnuplot.hpp"
-#include "distributor.hpp"
+#include "worker/distributor.hpp"
 #include "protocol.hpp"
 
 #include <stop_token>

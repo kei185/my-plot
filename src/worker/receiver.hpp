@@ -9,10 +9,10 @@
 #include <cstdlib>
 #include <expected>
 
-#include "frame.hpp"
-#include "error.hpp"
-#include "io.hpp"
-#include "xqueue.hpp"
+#include "core/frame.hpp"
+#include "utility/error.hpp"
+#include "core/io.hpp"
+#include "core/xqueue.hpp"
 
 using namespace error;
 

@@ -2,9 +2,9 @@
 #include <stop_token>
 #include <vector>
 
-#include "frame.hpp"
+#include "core/frame.hpp"
 #include "utility/logger.hpp"
-#include "xqueue.hpp"
+#include "core/xqueue.hpp"
 
 namespace parser
 {

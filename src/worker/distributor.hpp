@@ -1,7 +1,7 @@
 #pragma once
-#include "frame.hpp"
-#include "transmitter.hpp"
-#include "xqueue.hpp"
+#include "core/frame.hpp"
+#include "worker/transmitter.hpp"
+#include "core/xqueue.hpp"
 
 #include <stop_token>
 #include <fcntl.h>

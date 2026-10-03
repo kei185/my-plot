@@ -8,14 +8,14 @@
 #include <cstdlib>
 #include <map>
 
-#include "distributor.hpp"
-#include "error.hpp"
-#include "parser.hpp"
-#include "frame.hpp"
-#include "io.hpp"
-#include "receiver.hpp"
-#include "transmitter.hpp"
-#include "xqueue.hpp"
+#include "worker/distributor.hpp"
+#include "utility/error.hpp"
+#include "worker/parser.hpp"
+#include "core/frame.hpp"
+#include "core/io.hpp"
+#include "worker/receiver.hpp"
+#include "worker/transmitter.hpp"
+#include "core/xqueue.hpp"
 
 using namespace error;
 

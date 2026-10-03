@@ -11,11 +11,11 @@
 
 #include <boost/crc.hpp>
 
-#include "receiver.hpp"
-#include "error.hpp"
-#include "frame.hpp"
-#include "io.hpp"
-#include "xqueue.hpp"
+#include "worker/receiver.hpp"
+#include "utility/error.hpp"
+#include "core/frame.hpp"
+#include "core/io.hpp"
+#include "core/xqueue.hpp"
 #include "utility/unwrap.hpp"
 #include "utility/toInt.hpp"
 
